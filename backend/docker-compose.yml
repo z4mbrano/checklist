@@ -1,0 +1,62 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: checkinsys_db
+    environment:
+      POSTGRES_USER: checkinsys
+      POSTGRES_PASSWORD: checkinsys123
+      POSTGRES_DB: checkinsys_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U checkinsys"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - checkinsys_network
+
+  redis:
+    image: redis:7-alpine
+    container_name: checkinsys_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - checkinsys_network
+
+  backend:
+    build: .
+    container_name: checkinsys_backend
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    volumes:
+      - .:/app
+      - ./uploads:/app/uploads
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://checkinsys:checkinsys123@db:5432/checkinsys_db
+      - REDIS_URL=redis://redis:6379/0
+      - SECRET_KEY=sua-chave-secreta-super-segura-aqui-pelo-menos-32-caracteres
+      - ENVIRONMENT=development
+      - DEBUG=True
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - checkinsys_network
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  checkinsys_network:
+    driver: bridge

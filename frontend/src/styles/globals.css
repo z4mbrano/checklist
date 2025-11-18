@@ -1,0 +1,119 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 210 40% 8%;
+    --foreground: 210 40% 98%;
+    --card: 210 40% 8%;
+    --card-foreground: 210 40% 98%;
+    --popover: 210 40% 8%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 210 40% 98%;
+    --primary-foreground: 210 40% 8%;
+    --secondary: 210 40% 14%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 210 40% 14%;
+    --muted-foreground: 210 40% 60%;
+    --accent: 210 40% 14%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62% 50%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 210 40% 18%;
+    --input: 210 40% 18%;
+    --ring: 210 40% 60%;
+    --radius: 0.5rem;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+@layer utilities {
+  .timer-pulse {
+    animation: pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  .checkin-button-active {
+    @apply bg-vrd-red hover:bg-red-600 animate-pulse;
+  }
+
+  .checkout-button {
+    @apply bg-vrd-green hover:bg-green-600;
+  }
+
+  .project-card {
+    @apply bg-vrd-dark border border-gray-600 rounded-lg p-4 hover:bg-vrd-darker transition-colors duration-200;
+  }
+
+  .status-badge {
+    @apply px-2 py-1 rounded-full text-xs font-medium;
+  }
+
+  .status-em-andamento {
+    @apply bg-vrd-blue/20 text-vrd-blue border border-vrd-blue/30;
+  }
+
+  .status-concluido {
+    @apply bg-vrd-green/20 text-vrd-green border border-vrd-green/30;
+  }
+
+  .status-cancelado {
+    @apply bg-vrd-red/20 text-vrd-red border border-vrd-red/30;
+  }
+
+  .status-planejamento {
+    @apply bg-vrd-orange/20 text-vrd-orange border border-vrd-orange/30;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-vrd-dark;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-gray-600 rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-gray-500;
+}
+
+/* Form inputs */
+.form-input {
+  @apply bg-vrd-dark border border-gray-600 rounded-md px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-vrd-blue focus:border-transparent;
+}
+
+.form-button {
+  @apply bg-vrd-blue hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-md transition-colors duration-200;
+}
+
+.form-button:disabled {
+  @apply bg-gray-600 cursor-not-allowed;
+}
+
+/* Loading spinner */
+.spinner {
+  border: 3px solid transparent;
+  border-top: 3px solid currentColor;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
