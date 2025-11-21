@@ -1,13 +1,14 @@
+import { useNavigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Clock, Folder, Activity, User } from 'lucide-react'
-import { CheckinButton, CheckoutButton } from '@/components/checkin'
 import { Button } from '@/components/common/Button'
 import { useAuthStore } from '@/store/authStore'
 import { checkinService, projectService } from '@/services/api'
-import { Checkin } from '@/types/checkin.types'
+import { Checkin, CheckinStatus } from '@/types/checkin.types'
 
 export default function DashboardPage() {
+  const navigate = useNavigate()
   const { user } = useAuthStore()
   const [currentCheckin, setCurrentCheckin] = useState<Checkin | null>(null)
 
@@ -28,17 +29,20 @@ export default function DashboardPage() {
     setCurrentCheckin(checkinData || null)
   }, [checkinData])
 
-  const handleCheckinCreated = (checkin: Checkin) => {
-    setCurrentCheckin(checkin)
-    refetchCheckin()
+  const handleStartCheckin = () => {
+    navigate('/checkin/select-project')
   }
 
-  const handleCheckoutCompleted = () => {
-    setCurrentCheckin(null)
-    refetchCheckin()
+  const handleContinueCheckin = () => {
+    if (currentCheckin) {
+      navigate(`/checkin/workflow/${currentCheckin.project_id}`)
+    }
   }
 
   const activeProjects = projects.filter(p => p.status === 'active').slice(0, 6)
+  
+  const isArrived = currentCheckin?.status === CheckinStatus.ARRIVED
+  const isWorking = currentCheckin?.status === CheckinStatus.WORKING
 
   return (
     <div className="space-y-6">
@@ -81,15 +85,38 @@ export default function DashboardPage() {
           </div>
 
           {currentCheckin ? (
-            <CheckoutButton
-              activeCheckin={currentCheckin}
-              onCheckoutCompleted={handleCheckoutCompleted}
-            />
+            <div className="space-y-4">
+              <div className="bg-blue-900/20 border border-blue-600/50 rounded-lg p-4">
+                <p className="text-sm text-blue-300 mb-2">
+                  Status: {isArrived && 'Aguardando início do serviço'}
+                  {isWorking && 'Serviço em andamento'}
+                </p>
+                {currentCheckin.arrival_time && (
+                  <p className="text-sm text-gray-400">
+                    Chegada: {new Date(currentCheckin.arrival_time).toLocaleTimeString('pt-BR')}
+                  </p>
+                )}
+                {currentCheckin.start_time && (
+                  <p className="text-sm text-gray-400">
+                    Início: {new Date(currentCheckin.start_time).toLocaleTimeString('pt-BR')}
+                  </p>
+                )}
+              </div>
+              <Button 
+                onClick={handleContinueCheckin}
+                className="w-full"
+              >
+                Continuar Atendimento
+              </Button>
+            </div>
           ) : (
-            <CheckinButton
-              hasActiveCheckin={!!currentCheckin}
-              onCheckinCreated={handleCheckinCreated}
-            />
+            <Button 
+              onClick={handleStartCheckin}
+              className="w-full py-4 text-lg"
+            >
+              <Clock className="w-5 h-5 mr-2" />
+              Iniciar Novo Check-in
+            </Button>
           )}
         </div>
 
@@ -164,11 +191,19 @@ export default function DashboardPage() {
 
       {/* Quick Actions */}
       <div className="grid md:grid-cols-3 gap-4">
-        <Button variant="outline" className="h-12">
+        <Button 
+          variant="outline" 
+          className="h-12"
+          onClick={() => navigate('/history')}
+        >
           <Activity className="w-4 h-4 mr-2" />
           Histórico
         </Button>
-        <Button variant="outline" className="h-12">
+        <Button 
+          variant="outline" 
+          className="h-12"
+          onClick={() => navigate('/checkin/select-project')}
+        >
           <Folder className="w-4 h-4 mr-2" />
           Projetos
         </Button>

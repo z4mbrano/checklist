@@ -2,25 +2,33 @@ import { Project, Task } from './project.types'
 import { User } from './auth.types'
 
 export enum CheckinStatus {
-  ACTIVE = 'active',
-  COMPLETED = 'completed'
+  ARRIVED = 'arrived',        // Chegou no cliente
+  WORKING = 'working',        // Iniciou o serviço
+  COMPLETED = 'completed'     // Finalizou
+}
+
+export enum CheckinType {
+  ARRIVAL = 'arrival',        // Check-in de chegada
+  START_SERVICE = 'start_service'  // Check-in de início de serviço
 }
 
 export interface Checkin {
   id: number
   user_id: number
   project_id: number
-  task_id?: number
-  checkin_time: string
-  checkout_time?: string
+  task_ids?: number[]         // Lista de tarefas executadas
+  arrival_time?: string       // Hora de chegada no cliente
+  start_time?: string         // Hora de início do serviço
+  checkout_time?: string      // Hora de saída
   total_hours?: number
-  description?: string
+  activities?: string         // Atividades executadas (selecionadas)
+  observations?: string       // Campo livre de observações
   status: CheckinStatus
   created_at: string
   updated_at: string
   user?: User
   project?: Project
-  task?: Task
+  tasks?: Task[]
 }
 
 export interface Attachment {
@@ -37,15 +45,15 @@ export interface Attachment {
 // Request types
 export interface CreateCheckinRequest {
   project_id: number
-  task_id?: number
-  description?: string
+  type: CheckinType           // Tipo de check-in
 }
 
-export interface UpdateCheckinRequest {
-  task_id?: number
-  description?: string
+export interface StartServiceRequest {
+  checkin_id: number
 }
 
 export interface CheckoutRequest {
-  description?: string
+  checkin_id: number
+  task_ids: number[]          // IDs das atividades executadas
+  observations?: string       // Observações do técnico
 }

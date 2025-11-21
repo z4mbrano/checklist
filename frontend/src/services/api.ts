@@ -72,7 +72,7 @@ api.interceptors.response.use(
 import { 
   Project, Client, Task, Checkin,
   CreateProjectRequest, CreateTaskRequest, 
-  CreateCheckinRequest, UpdateCheckinRequest, CheckoutRequest 
+  CreateCheckinRequest, StartServiceRequest, CheckoutRequest 
 } from '@/types'
 
 class ProjectService {
@@ -126,6 +126,7 @@ class TaskService {
 }
 
 class CheckinService {
+  // Buscar check-in ativo do usuário
   async getCurrentCheckin(): Promise<Checkin | null> {
     try {
       const response = await api.get('/api/v1/checkins/current')
@@ -138,21 +139,25 @@ class CheckinService {
     }
   }
 
-  async create(data: CreateCheckinRequest): Promise<Checkin> {
-    const response = await api.post('/api/v1/checkins/', data)
+  // Check-in de chegada no cliente
+  async arrival(data: CreateCheckinRequest): Promise<Checkin> {
+    const response = await api.post('/api/v1/checkins/arrival', data)
     return response.data
   }
 
-  async update(id: number, data: UpdateCheckinRequest): Promise<Checkin> {
-    const response = await api.put(`/api/v1/checkins/${id}`, data)
+  // Check-in de início de serviço
+  async startService(data: StartServiceRequest): Promise<Checkin> {
+    const response = await api.post('/api/v1/checkins/start-service', data)
     return response.data
   }
 
-  async checkout(id: number, data: CheckoutRequest): Promise<Checkin> {
-    const response = await api.post(`/api/v1/checkins/${id}/checkout`, data)
+  // Check-out com atividades e observações
+  async checkout(data: CheckoutRequest): Promise<Checkin> {
+    const response = await api.post('/api/v1/checkins/checkout', data)
     return response.data
   }
 
+  // Histórico de check-ins
   async getHistory(page: number = 1, size: number = 10): Promise<{ items: Checkin[], total: number }> {
     const response = await api.get(`/api/v1/checkins/`, {
       params: { page, size }

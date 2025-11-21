@@ -3,10 +3,12 @@ import { useAuthStore } from '@/store/authStore'
 import { Layout } from '@/components/layout/Layout'
 import LoginPage from '@/pages/auth/LoginPage'
 import DashboardPage from '@/pages/dashboard/DashboardPage'
-import CheckinPage from '@/pages/checkin/CheckinPage'
-import CheckoutPage from '@/pages/checkin/CheckoutPage'
+import { ProjectSelectionPage } from '@/pages/checkin/ProjectSelectionPage'
+import { CheckinWorkflowPage } from '@/pages/checkin/CheckinWorkflowPage'
+import { AddProjectPage } from '@/pages/checkin/AddProjectPage'
 import HistoryPage from '@/pages/history/HistoryPage'
 import ProjectDetailPage from '@/pages/history/ProjectDetailPage'
+import MobileWorkflowApp from '@/pages/mobile/MobileWorkflowApp'
 
 // Protected Route component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -34,6 +36,9 @@ function App() {
   return (
     <div className="min-h-screen bg-vrd-darker">
       <Routes>
+        {/* Versão Mobile (standalone) */}
+        <Route path="/mobile" element={<MobileWorkflowApp />} />
+        
         {/* Public routes */}
         <Route 
           path="/login" 
@@ -55,8 +60,9 @@ function App() {
         >
           <Route index element={<Navigate to="/dashboard" replace />} />
           <Route path="dashboard" element={<DashboardPage />} />
-          <Route path="checkin" element={<CheckinPage />} />
-          <Route path="checkout/:id" element={<CheckoutPage />} />
+          <Route path="checkin/select-project" element={<ProjectSelectionPage />} />
+          <Route path="checkin/workflow/:projectId" element={<CheckinWorkflowPage />} />
+          <Route path="projects/new" element={<AddProjectPage />} />
           <Route path="history" element={<HistoryPage />} />
           <Route path="project/:id" element={<ProjectDetailPage />} />
         </Route>
