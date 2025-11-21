@@ -8,7 +8,7 @@ import { CheckinWorkflowPage } from '@/pages/checkin/CheckinWorkflowPage'
 import { AddProjectPage } from '@/pages/checkin/AddProjectPage'
 import HistoryPage from '@/pages/history/HistoryPage'
 import ProjectDetailPage from '@/pages/history/ProjectDetailPage'
-import MobileWorkflowApp from '@/pages/mobile/MobileWorkflowApp'
+import MobileApp from '@/pages/mobile/MobileApp'
 
 // Protected Route component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -37,7 +37,7 @@ function App() {
     <div className="min-h-screen bg-vrd-darker">
       <Routes>
         {/* Versão Mobile (standalone) */}
-        <Route path="/mobile" element={<MobileWorkflowApp />} />
+        <Route path="/mobile" element={<MobileApp />} />
         
         {/* Public routes */}
         <Route 
