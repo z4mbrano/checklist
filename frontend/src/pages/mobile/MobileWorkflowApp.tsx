@@ -6,7 +6,7 @@ import {
   MapPin, Play, StopCircle, CheckCircle, 
   Clock, User, Briefcase, 
   ChevronRight, Plus, Edit, ArrowLeft, 
-  History, Folder, FileText, AlertCircle
+  History, Folder, FileText, AlertCircle, LogOut
 } from 'lucide-react'
 
 // --- FIREBASE CONFIG (PLACEHOLDER) ---
@@ -324,15 +324,25 @@ const LoginScreen = ({ onLogin }: { onLogin: (user: User) => void }) => {
   )
 }
 
-const DashboardScreen = ({ onNavigate }: { onNavigate: (screen: Screen) => void }) => (
+const DashboardScreen = ({ onNavigate, onLogout, user }: { onNavigate: (screen: Screen) => void, onLogout: () => void, user: User | null }) => (
   <div className="p-6 max-w-5xl mx-auto space-y-8">
     <header className="flex justify-between items-center">
       <div>
-        <h1 className="text-2xl font-bold text-slate-800">Olá, Técnico</h1>
+        <h1 className="text-2xl font-bold text-slate-800">Olá, {user?.name || 'Técnico'}</h1>
         <p className="text-slate-500">Bem-vindo ao seu painel</p>
       </div>
-      <div className="w-10 h-10 bg-slate-200 rounded-full flex items-center justify-center">
-        <User className="text-slate-600" size={20} />
+      <div className="flex items-center gap-3">
+        <button 
+          onClick={onLogout}
+          className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+          title="Sair"
+        >
+          <LogOut size={18} />
+          Sair
+        </button>
+        <div className="w-10 h-10 bg-slate-200 rounded-full flex items-center justify-center">
+          <User className="text-slate-600" size={20} />
+        </div>
       </div>
     </header>
 
@@ -1015,6 +1025,11 @@ export default function MobileWorkflowApp() {
     setUser(loggedUser)
     setCurrentScreen('dashboard')
   }
+
+  const handleLogout = () => {
+    setUser(null)
+    setCurrentScreen('login')
+  }
   
   const startWorkflow = (project: Project) => {
     setSelectedProject(project)
@@ -1125,7 +1140,7 @@ export default function MobileWorkflowApp() {
     <div className="min-h-screen bg-slate-50 font-sans text-slate-900">
       {currentScreen === 'login' && <LoginScreen onLogin={handleLogin} />}
       
-      {currentScreen === 'dashboard' && <DashboardScreen onNavigate={setCurrentScreen} />}
+      {currentScreen === 'dashboard' && <DashboardScreen onNavigate={setCurrentScreen} onLogout={handleLogout} user={user} />}
       
       {currentScreen === 'selectProject' && (
         <SelectProjectScreen 
