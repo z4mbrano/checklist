@@ -12,8 +12,7 @@ engine_kwargs = {"echo": False}  # Default echo to False
 # Add SQLite-specific configuration
 if settings.database_url.startswith("sqlite"):
     engine_kwargs.update({
-        "connect_args": {"check_same_thread": False},  # Needed for SQLite
-        "poolclass": None  # SQLite doesn't need connection pooling
+        "connect_args": {"check_same_thread": False}  # Needed for SQLite
     })
 else:
     # PostgreSQL configuration  

@@ -30,8 +30,7 @@ try:
     
     # Create database tables
     print("\n🔧 Setting up database...")
-    from app.db.base import Base
-    from app.core.database import engine
+    from app.core.database import Base, engine
     Base.metadata.create_all(bind=engine)
     print("✅ Database tables created!")
     
