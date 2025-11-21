@@ -143,35 +143,41 @@ const ACTIVITY_TAGS = ['Instalação', 'Manutenção', 'Reunião', 'Treinamento'
 const PrintStyles = () => (
   <style>{`
     @media print {
-      body * {
-        visibility: hidden;
-      }
-      
-      #printable-area,
-      #printable-area * {
-        visibility: visible;
-      }
-      
-      #printable-area {
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 100%;
+      html, body {
+        margin: 0;
+        padding: 0;
         background: white !important;
+        height: auto !important;
+        overflow: visible !important;
       }
       
       .no-print {
         display: none !important;
       }
       
-      button, input, select, textarea {
-        display: none !important;
+      .printable-area {
+        display: block !important;
+        overflow: visible !important;
+        height: auto !important;
+        max-height: none !important;
+        flex: none !important;
       }
       
-      * {
-        color: black !important;
-        background: white !important;
-        box-shadow: none !important;
+      .print-container {
+        display: block !important;
+        height: auto !important;
+        overflow: visible !important;
+        max-height: none !important;
+      }
+      
+      /* Evita quebra de página dentro dos cards */
+      .print\\:break-inside-avoid {
+        break-inside: avoid;
+        page-break-inside: avoid;
+      }
+      
+      button, input, select, textarea {
+        display: none !important;
       }
       
       .rounded-2xl, .rounded-xl {
@@ -809,7 +815,7 @@ const ProjectDetailScreen = ({
   }
 
   return (
-    <div className="p-6 max-w-3xl mx-auto">
+    <div className="p-6 max-w-3xl mx-auto print:h-auto print:block print-container">
       <PrintStyles />
       
       <header className="flex items-center justify-between mb-8">
@@ -840,7 +846,7 @@ const ProjectDetailScreen = ({
         </div>
       </header>
 
-      <div className="printable-area space-y-4">
+      <div className="printable-area space-y-4 print:flex-none print:overflow-visible print:h-auto">
         {projectCheckins.length === 0 && (
           <div className="text-center py-12 text-slate-400">
             <History size={48} className="mx-auto mb-4 opacity-50" />
@@ -849,7 +855,7 @@ const ProjectDetailScreen = ({
         )}
         
         {projectCheckins.map(c => (
-          <Card key={c.id} className="p-5">
+          <Card key={c.id} className="p-5 print:break-inside-avoid">
             <div className="flex justify-between items-start mb-3">
               <div>
                 <p className="font-bold text-slate-800">{new Date(c.date).toLocaleDateString()}</p>
