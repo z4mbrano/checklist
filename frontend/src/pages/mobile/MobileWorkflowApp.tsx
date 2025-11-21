@@ -66,19 +66,21 @@ type Screen = 'login' | 'dashboard' | 'selectProject' | 'addProject' | 'editProj
 
 // --- MOCK USERS ---
 const MOCK_USERS: User[] = [
-  { email: 'admin@vrdsolution.com', name: 'Administrador', isAdmin: true },
-  { email: 'arthur@vrdsolution.com.br', name: 'Arthur Zambrano', isAdmin: false },
-  { email: 'carlos@vrdsolution.com', name: 'Carlos Silva', isAdmin: false },
-  { email: 'ana@vrdsolution.com', name: 'Ana Souza', isAdmin: false },
-  { email: 'roberto@vrdsolution.com', name: 'Roberto Dias', isAdmin: false },
+  { email: 'admin@vrdsolution.com.br', name: 'Administrador', isAdmin: true },
+  { email: 'arthur@vrdsolution.com.br', name: 'Arthur Belmonte', isAdmin: false },
+  { email: 'guilherme@vrdsolution.com.br', name: 'Guilherme Bohn', isAdmin: false },
+  { email: 'diego@vrdsolution.com.br', name: 'Diego Bohn', isAdmin: false },
+  { email: 'rafael@vrdsolution.com.br', name: 'Rafael Machado', isAdmin: false },
+  { email: 'raphael@vrdsolution.com.br', name: 'Raphael Machado', isAdmin: false },
 ]
 
 const MOCK_PASSWORDS: Record<string, string> = {
-  'admin@vrdsolution.com': 'admin123',
+  'admin@vrdsolution.com.br': 'admin123',
   'arthur@vrdsolution.com.br': 'zambranolindo',
-  'carlos@vrdsolution.com': 'carlos123',
-  'ana@vrdsolution.com': 'ana123',
-  'roberto@vrdsolution.com': 'roberto123',
+  'guilherme@vrdsolution.com.br': 'vrd123',
+  'diego@vrdsolution.com.br': 'vrd123',
+  'rafael@vrdsolution.com.br': 'vrd123',
+  'raphael@vrdsolution.com.br': 'vrd123',
 }
 
 // --- MOCK DATA ---

@@ -1,0 +1,43 @@
+export interface User {
+  email: string
+  name: string
+  isAdmin: boolean
+}
+
+export interface Project {
+  id: string
+  name: string
+  client: string
+  responsible: string
+  responsibleEmail: string
+  startDate: string
+  endDate?: string
+  observations?: string
+  status: 'Em Andamento' | 'Concluído' | 'Pausado'
+}
+
+export interface Checkin {
+  id: string
+  projectId: string
+  projectName: string
+  arrivalTime?: string
+  startTime?: string
+  endTime?: string
+  totalHours?: string
+  activities: string[]
+  otherActivities?: string
+  observations?: string
+  date: string
+  userEmail: string
+}
+
+export type Screen = 
+  | 'login' 
+  | 'dashboard' 
+  | 'selectProject' 
+  | 'addProject' 
+  | 'editProject' 
+  | 'workflow' 
+  | 'history' 
+  | 'projectDetail' 
+  | 'success'

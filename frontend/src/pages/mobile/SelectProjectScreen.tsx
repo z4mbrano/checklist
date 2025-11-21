@@ -1,0 +1,70 @@
+import React from 'react'
+import { ArrowLeft, Plus, Folder, ChevronRight } from 'lucide-react'
+import { useAuth } from '../../contexts/AuthContext'
+import { useData } from '../../contexts/DataContext'
+import { Card } from '../../components/ui/Card'
+import { Button } from '../../components/ui/Button'
+import { Screen, Project } from '../../types/mobile'
+
+interface SelectProjectScreenProps {
+  onNavigate: (screen: Screen) => void
+  onSelectProject: (project: Project) => void
+}
+
+export const SelectProjectScreen = ({ onNavigate, onSelectProject }: SelectProjectScreenProps) => {
+  const { user } = useAuth()
+  const { projects } = useData()
+
+  // Filter projects based on permissions
+  const filteredProjects = user?.isAdmin 
+    ? projects 
+    : projects.filter(p => p.responsibleEmail === user?.email)
+
+  return (
+    <div className="p-6 max-w-2xl mx-auto min-h-screen flex flex-col">
+      <header className="flex items-center gap-4 mb-8">
+        <button onClick={() => onNavigate('dashboard')} className="p-2 hover:bg-slate-200 rounded-full no-print">
+          <ArrowLeft />
+        </button>
+        <div>
+          <h1 className="text-xl font-bold text-slate-800">Selecionar Projeto</h1>
+          {user && !user.isAdmin && (
+            <p className="text-xs text-slate-500">Seus projetos atribuídos</p>
+          )}
+        </div>
+      </header>
+
+      <div className="flex-1 space-y-4">
+        {user?.isAdmin && (
+          <Button 
+            variant="outline" 
+            onClick={() => onNavigate('addProject')} 
+            icon={Plus} 
+            className="border-dashed border-2 no-print"
+          >
+            Adicionar Novo Projeto
+          </Button>
+        )}
+        
+        <div className="space-y-3 mt-6">
+          {filteredProjects.length === 0 && (
+            <div className="text-center py-12 text-slate-400">
+              <Folder size={48} className="mx-auto mb-4 opacity-50" />
+              <p>Nenhum projeto disponível</p>
+            </div>
+          )}
+          
+          {filteredProjects.map(p => (
+            <Card key={p.id} onClick={() => onSelectProject(p)} className="p-5 flex items-center justify-between group">
+              <div>
+                <h3 className="font-bold text-slate-800">{p.name}</h3>
+                <p className="text-sm text-slate-500">{p.client}</p>
+              </div>
+              <ChevronRight className="text-slate-300 group-hover:text-blue-900" />
+            </Card>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
