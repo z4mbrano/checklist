@@ -5,9 +5,8 @@ import { useMutation } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'react-hot-toast'
 import { Briefcase, AlertCircle } from 'lucide-react'
-import { useAuthStore } from '@/store/authStore'
-import { authService as mockAuthService } from '@/services/auth.mock'
-import { LoginRequest, UserRole } from '@/types/auth.types'
+import { useAuth } from '@/contexts/AuthContext'
+import { LoginRequest } from '@/types/auth.types'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
@@ -22,7 +21,7 @@ type LoginFormData = z.infer<typeof loginSchema>
 
 export default function LoginPage() {
   const navigate = useNavigate()
-  const { setAuth } = useAuthStore()
+  const { login } = useAuth()
   
   const {
     register,
@@ -33,25 +32,9 @@ export default function LoginPage() {
   })
 
   const loginMutation = useMutation({
-    mutationFn: (data: LoginRequest) => mockAuthService.login(data.email, data.password),
-    onSuccess: (mockUser) => {
-      // Adapt Mock User to Store User
-      const user = {
-        id: 1,
-        email: mockUser.email,
-        name: mockUser.name,
-        role: mockUser.isAdmin ? UserRole.ADMIN : UserRole.TECNICO,
-        is_active: true,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      }
-      
-      // Fake tokens
-      const accessToken = 'mock-access-token'
-      const refreshToken = 'mock-refresh-token'
-
-      setAuth(user, accessToken, refreshToken)
-      toast.success(`Bem-vindo, ${user.name}!`)
+    mutationFn: (data: LoginRequest) => login(data.email, data.password),
+    onSuccess: () => {
+      toast.success('Login realizado com sucesso!')
       navigate('/dashboard')
     },
     onError: (error: any) => {
@@ -116,9 +99,7 @@ export default function LoginPage() {
           </Button>
 
           <div className="text-xs text-slate-400 text-center space-y-1">
-            <p className="font-semibold text-slate-500">Ambiente de Desenvolvimento (Mock)</p>
-            <p>Admin: admin@vrdsolution.com.br (admin123)</p>
-            <p>Técnico: arthur@vrdsolution.com.br (zambranolindo)</p>
+            <p className="font-semibold text-slate-500">Ambiente de Produção</p>
           </div>
         </form>
       </Card>

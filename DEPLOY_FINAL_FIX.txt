@@ -1,0 +1,21 @@
+INSTRUÇÕES FINAIS DE CORREÇÃO
+
+O erro 500 anterior aconteceu porque o arquivo `passenger_wsgi.py` estava tentando reiniciar o Python, mas o `.htaccess` já estava fazendo isso, criando um conflito.
+
+Agora vamos resolver de vez.
+
+PASSO 1: ATUALIZAR O ARQUIVO PYTHON (CRÍTICO)
+1. Pegue o arquivo `backend/passenger_wsgi.py` que acabei de modificar.
+2. Envie para a pasta `/apps_wsgi/checklist` no servidor.
+   - Substitua o arquivo existente.
+   - Esse novo arquivo tem um sistema de proteção: se der erro no Python, ele vai mostrar o erro na tela em vez de dar "Internal Server Error".
+
+PASSO 2: ATUALIZAR O .HTACCESS
+1. Pegue o arquivo `backend/static/.htaccess`.
+2. Envie para a pasta `/www/vrdchecklist.com.br` no servidor.
+   - O conteúdo dele deve ser apenas as 3 linhas do Passenger.
+
+PASSO 3: TESTAR
+1. Acesse https://checklist.vrdsolution.com.br/
+2. Se funcionar: Ótimo!
+3. Se aparecer um texto de erro na tela (começando com "Erro ao iniciar a aplicacao..."): Copie e me mande. Isso é o Python nos dizendo o que está errado.

@@ -1,0 +1,36 @@
+DIAGNÓSTICO DE ERRO (DIAGNOSTIC STEPS)
+
+O problema é que o site ainda está carregando a página da empresa ("Quem Somos"), o que significa que o servidor NÃO está lendo o arquivo .htaccess que criamos, ou estamos na pasta errada.
+
+PASSO 1: VERIFICAR A PASTA PÚBLICA
+1. Acesse o painel de controle da KingHost.
+2. Vá em "Gerenciar Domínios" ou "Subdomínios".
+3. Procure por "checklist.vrdsolution.com.br".
+4. Veja EXATAMENTE qual é o "Diretório" ou "Caminho" configurado para ele.
+   - Exemplo: /www/checklist
+   - Exemplo: /www/vrdchecklist.com.br
+   - Exemplo: /www/subdominios/checklist
+
+PASSO 2: TESTE DO ARQUIVO DE TEXTO (IMPORTANTE)
+Para ter certeza absoluta de que estamos mexendo na pasta certa:
+1. Abra o FTP na pasta que você acha que é a pública (ex: /www/vrdchecklist.com.br).
+2. Crie um arquivo chamado "teste.txt".
+3. Escreva "ESTOU NA PASTA CERTA" dentro dele.
+4. Tente acessar no navegador: https://checklist.vrdsolution.com.br/teste.txt
+
+RESULTADOS DO TESTE:
+- Se aparecer "ESTOU NA PASTA CERTA": Ótimo! A pasta está correta. O problema é o .htaccess.
+- Se der "Erro 404" ou carregar o site da empresa: VOCÊ ESTÁ NA PASTA ERRADA. O subdomínio está apontando para outro lugar.
+
+PASSO 3: CORRIGIR O .HTACCESS
+Se o Passo 2 funcionou (você viu o texto), então verifique o arquivo .htaccess nessa mesma pasta:
+- Ele deve ser o ÚNICO arquivo lá (além do teste.txt).
+- O conteúdo deve ser exatamente:
+
+PassengerAppRoot /home/vrdsolution/apps_wsgi/checklist
+PassengerBaseURI /
+PassengerPython /home/vrdsolution/.local/share/virtualenvs/checklist/bin/python3
+
+----------------------------------------------------------------
+RESUMO:
+Descubra qual é a pasta REAL do subdomínio usando o teste do "teste.txt".
