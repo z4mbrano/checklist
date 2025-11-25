@@ -25,12 +25,13 @@ export const authService = {
     // Simulate API delay
     await new Promise(resolve => setTimeout(resolve, 500))
 
-    const user = MOCK_USERS.find(u => u.email === email)
+    const normalizedEmail = email.trim().toLowerCase()
+    const user = MOCK_USERS.find(u => u.email.toLowerCase() === normalizedEmail)
     if (!user) {
       throw new Error('Usuário não encontrado')
     }
 
-    const correctPassword = MOCK_PASSWORDS[email]
+    const correctPassword = MOCK_PASSWORDS[user.email] // Use the email from the found user to look up password
     if (password !== correctPassword) {
       throw new Error('Senha incorreta')
     }

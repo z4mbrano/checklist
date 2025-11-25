@@ -1,6 +1,7 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react'
-import { User } from '../types/mobile'
-import { authService } from '../services/auth.mock'
+import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react'
+import { User, UserRole } from '../types/auth.types'
+import { authService } from '../services/auth.service'
+import { useAuthStore } from '../store/authStore'
 
 interface AuthContextType {
   user: User | null
@@ -15,26 +16,35 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null)
+  const { user: storedUser, setAuth, logout: storeLogout } = useAuthStore()
+  const [user, setUser] = useState<User | null>(storedUser)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  // Sync with store
+  useEffect(() => {
+    setUser(storedUser)
+  }, [storedUser])
 
   const login = async (email: string, password: string) => {
     setIsLoading(true)
     setError(null)
     try {
-      const loggedUser = await authService.login(email, password)
-      setUser(loggedUser)
+      const response = await authService.login({ email, password })
+      setAuth(response.user, response.access_token, response.refresh_token)
+      setUser(response.user)
     } catch (err: any) {
-      setError(err.message || 'Erro ao fazer login')
-      throw err
+      const errorMessage = err.response?.data?.detail || err.message || 'Erro ao fazer login'
+      setError(errorMessage)
+      throw new Error(errorMessage)
     } finally {
       setIsLoading(false)
     }
   }
 
   const logout = () => {
-    authService.logout()
+    authService.logout().catch(console.error) // Try to logout on server, but ignore errors
+    storeLogout()
     setUser(null)
   }
 
@@ -42,7 +52,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     <AuthContext.Provider value={{
       user,
       isAuthenticated: !!user,
-      isAdmin: !!user?.isAdmin,
+      isAdmin: user?.role === UserRole.ADMIN,
       login,
       logout,
       isLoading,

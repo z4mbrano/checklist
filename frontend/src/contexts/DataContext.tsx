@@ -1,90 +1,101 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react'
+import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react'
 import { Project, Checkin } from '../types/mobile'
-
-// --- MOCK DATA ---
-const INITIAL_PROJECTS: Project[] = [
-  { 
-    id: '1', 
-    name: 'Instalação CCTV', 
-    client: 'Shopping Metrô', 
-    responsible: 'Carlos Silva', 
-    responsibleEmail: 'carlos@vrdsolution.com',
-    startDate: '2023-10-01', 
-    status: 'Em Andamento' 
-  },
-  { 
-    id: '2', 
-    name: 'Manutenção Rede', 
-    client: 'Escola Futuro', 
-    responsible: 'Ana Souza', 
-    responsibleEmail: 'ana@vrdsolution.com',
-    startDate: '2023-11-15', 
-    status: 'Em Andamento' 
-  },
-  { 
-    id: '3', 
-    name: 'Consultoria TI', 
-    client: 'Advocacia Lima', 
-    responsible: 'Roberto Dias', 
-    responsibleEmail: 'roberto@vrdsolution.com',
-    startDate: '2023-09-20', 
-    status: 'Concluído' 
-  },
-  { 
-    id: '4', 
-    name: 'Implementação Firewall', 
-    client: 'Empresa Tech Solutions', 
-    responsible: 'Arthur Zambrano', 
-    responsibleEmail: 'arthur@vrdsolution.com.br',
-    startDate: '2023-11-21', 
-    status: 'Em Andamento' 
-  },
-]
-
-const INITIAL_CHECKINS: Checkin[] = [
-  { 
-    id: '101', 
-    projectId: '3', 
-    projectName: 'Consultoria TI', 
-    arrivalTime: '2023-11-20T09:00:00', 
-    startTime: '2023-11-20T09:15:00', 
-    endTime: '2023-11-20T11:30:00', 
-    totalHours: '02:15', 
-    activities: ['Reunião'], 
-    observations: 'Reunião inicial com cliente', 
-    date: '2023-11-20',
-    userEmail: 'roberto@vrdsolution.com'
-  }
-]
+import { projectService, checkinService } from '../services/api'
+import { Project as ApiProject, ProjectStatus } from '../types/project.types'
+import { Checkin as ApiCheckin } from '../types/checkin.types'
+import { useAuth } from './AuthContext'
+import { toast } from 'react-hot-toast'
 
 interface DataContextType {
   projects: Project[]
   checkins: Checkin[]
-  addProject: (project: Project) => void
-  updateProject: (project: Project) => void
-  addCheckin: (checkin: Checkin) => void
-  updateCheckin: (checkin: Checkin) => void
+  isLoading: boolean
+  refreshData: () => Promise<void>
+  addProject: (project: Project) => void // Deprecated/Mock adapter
+  updateProject: (project: Project) => void // Deprecated/Mock adapter
+  addCheckin: (checkin: Checkin) => void // Deprecated/Mock adapter
+  updateCheckin: (checkin: Checkin) => void // Deprecated/Mock adapter
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined)
 
 export const DataProvider = ({ children }: { children: ReactNode }) => {
-  const [projects, setProjects] = useState<Project[]>(INITIAL_PROJECTS)
-  const [checkins, setCheckins] = useState<Checkin[]>(INITIAL_CHECKINS)
+  const { isAuthenticated } = useAuth()
+  const [projects, setProjects] = useState<Project[]>([])
+  const [checkins, setCheckins] = useState<Checkin[]>([])
+  const [isLoading, setIsLoading] = useState(false)
 
+  const mapApiProjectToMobile = (p: ApiProject): Project => ({
+    id: p.id.toString(),
+    name: p.name,
+    client: p.client?.name || 'Cliente Desconhecido',
+    responsible: 'Técnico', // API doesn't have this yet
+    responsibleEmail: '', // API doesn't have this yet
+    startDate: p.start_date || '',
+    endDate: p.end_date,
+    status: p.status === ProjectStatus.COMPLETED ? 'Concluído' : 
+            p.status === ProjectStatus.ON_HOLD ? 'Pausado' : 'Em Andamento',
+    observations: p.description
+  })
+
+  const mapApiCheckinToMobile = (c: ApiCheckin): Checkin => ({
+    id: c.id.toString(),
+    projectId: c.project_id.toString(),
+    projectName: c.project?.name || 'Projeto',
+    arrivalTime: c.arrival_time,
+    startTime: c.start_time,
+    endTime: c.checkout_time,
+    totalHours: c.total_hours ? c.total_hours.toFixed(2) : undefined,
+    activities: c.tasks?.map(t => t.name) || [],
+    observations: c.observations,
+    date: c.created_at,
+    userEmail: c.user?.email || ''
+  })
+
+  const refreshData = useCallback(async () => {
+    if (!isAuthenticated) return
+    
+    setIsLoading(true)
+    try {
+      const [projectsData, checkinsData] = await Promise.all([
+        projectService.getAll(),
+        checkinService.getHistory(1, 100) // Fetch last 100 checkins
+      ])
+
+      setProjects(projectsData.map(mapApiProjectToMobile))
+      setCheckins(checkinsData.items.map(mapApiCheckinToMobile))
+    } catch (error) {
+      console.error('Error fetching data:', error)
+      toast.error('Erro ao carregar dados')
+    } finally {
+      setIsLoading(false)
+    }
+  }, [isAuthenticated])
+
+  useEffect(() => {
+    refreshData()
+  }, [refreshData])
+
+  // Adapters for existing UI components that expect synchronous updates
+  // In a real app, these should be replaced by direct API calls in the components
   const addProject = (project: Project) => {
+    // This is a placeholder. In production, components should call projectService.create()
+    console.warn('addProject called in DataContext - should use API')
     setProjects(prev => [...prev, project])
   }
 
   const updateProject = (project: Project) => {
+    console.warn('updateProject called in DataContext - should use API')
     setProjects(prev => prev.map(p => p.id === project.id ? project : p))
   }
 
   const addCheckin = (checkin: Checkin) => {
+    console.warn('addCheckin called in DataContext - should use API')
     setCheckins(prev => [checkin, ...prev])
   }
 
   const updateCheckin = (checkin: Checkin) => {
+    console.warn('updateCheckin called in DataContext - should use API')
     setCheckins(prev => prev.map(c => c.id === checkin.id ? checkin : c))
   }
 
@@ -92,6 +103,8 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     <DataContext.Provider value={{
       projects,
       checkins,
+      isLoading,
+      refreshData,
       addProject,
       updateProject,
       addCheckin,

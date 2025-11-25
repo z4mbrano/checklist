@@ -10,7 +10,16 @@ class Settings(BaseSettings):
     """Application settings loaded from environment variables."""
     
     # Database
-    database_url: str = "sqlite:///./checklist.db"  # Default to SQLite for development
+    db_host: str
+    db_user: str
+    db_password: str
+    db_name: str
+    db_port: int = 3306
+    
+    @property
+    def database_url(self) -> str:
+        return f"mysql+pymysql://{self.db_user}:{self.db_password}@{self.db_host}:{self.db_port}/{self.db_name}"
+
     test_database_url: str = "sqlite:///./test_checklist.db"
     
     # Redis

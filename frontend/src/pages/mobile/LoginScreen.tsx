@@ -21,7 +21,7 @@ export const LoginScreen = () => {
     }
 
     try {
-      await login(email, password)
+      await login(email.trim(), password)
     } catch (err) {
       // Error handled by context
     }
@@ -68,8 +68,9 @@ export const LoginScreen = () => {
           </Button>
 
           <div className="text-xs text-slate-400 text-center space-y-1">
-            <p className="font-semibold text-slate-500">Ambiente de Desenvolvimento</p>
-            <p>Consulte o administrador para credenciais de teste.</p>
+            <p className="font-semibold text-slate-500">Ambiente de Desenvolvimento (Mock)</p>
+            <p>Admin: admin@vrdsolution.com.br (admin123)</p>
+            <p>Técnico: arthur@vrdsolution.com.br (zambranolindo)</p>
           </div>
         </form>
       </Card>
