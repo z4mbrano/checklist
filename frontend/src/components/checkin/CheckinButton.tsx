@@ -32,7 +32,8 @@ export function CheckinButton({
 
     setLoading(true)
     try {
-      const checkin = await checkinService.create({
+      // Use arrival instead of create
+      const checkin = await checkinService.arrival({
         project_id: selectedProject.id,
         description: description || undefined
       })

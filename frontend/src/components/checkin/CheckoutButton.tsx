@@ -28,7 +28,9 @@ export function CheckoutButton({
 
     setLoading(true)
     try {
-      await checkinService.checkout(activeCheckin.id, {
+      await checkinService.checkout({
+        checkin_id: activeCheckin.id,
+        task_ids: [], // Assuming empty tasks for now if not selected
         description: description || undefined
       })
 
@@ -68,7 +70,7 @@ export function CheckoutButton({
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-lg font-semibold text-white">Sessão Atual</h3>
             <Timer 
-              startTime={activeCheckin.checkin_time} 
+              startTime={activeCheckin.checkin_time || new Date().toISOString()} 
               isRunning={true}
               className="text-right"
             />
@@ -80,17 +82,17 @@ export function CheckoutButton({
               <span className="text-white font-medium">{activeCheckin.project?.name}</span>
             </div>
             
-            {activeCheckin.task && (
+            {activeCheckin.tasks && activeCheckin.tasks.length > 0 && (
               <div>
                 <span className="text-gray-400">Tarefa: </span>
-                <span className="text-white">{activeCheckin.task?.name}</span>
+                <span className="text-white">{activeCheckin.tasks[0]?.name}</span>
               </div>
             )}
 
             <div>
               <span className="text-gray-400">Início: </span>
               <span className="text-white">
-                {new Date(activeCheckin.checkin_time).toLocaleString('pt-BR')}
+                {new Date(activeCheckin.checkin_time || new Date()).toLocaleString('pt-BR')}
               </span>
             </div>
           </div>
@@ -147,7 +149,7 @@ export function CheckoutButton({
             <span className="text-green-300 font-medium">Sessão Ativa</span>
           </div>
           <Timer 
-            startTime={activeCheckin.checkin_time} 
+            startTime={activeCheckin.checkin_time || new Date().toISOString()} 
             isRunning={true}
           />
         </div>
@@ -157,6 +159,13 @@ export function CheckoutButton({
             <span className="text-gray-400">Projeto: </span>
             <span className="text-white font-medium">{activeCheckin.project?.name}</span>
           </div>
+          
+          {activeCheckin.tasks && activeCheckin.tasks.length > 0 && (
+            <div>
+              <span className="text-gray-400">Tarefa: </span>
+              <span className="text-white">{activeCheckin.tasks[0]?.name}</span>
+            </div>
+          )}
           
           {activeCheckin.task && (
             <div>

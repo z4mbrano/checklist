@@ -3,6 +3,9 @@ FastAPI main application
 """
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+import os
 from app.core.config import settings
 from app.api.v1.router import api_router
 
@@ -16,10 +19,16 @@ app = FastAPI(
     redoc_url="/redoc"
 )
 
-# CORS middleware
+# CORS middleware - configure allowed origins based on environment
+allowed_origins = settings.allowed_origins
+
+# In development, allow all origins for easier testing
+if settings.environment == "development":
+    allowed_origins = ["*"]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Temporarily allow all origins for testing
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -28,17 +37,36 @@ app.add_middleware(
 # Include API router
 app.include_router(api_router, prefix=settings.api_v1_prefix)
 
-
-@app.get("/")
-async def root():
-    """Root endpoint for health check."""
-    return {
-        "message": "Sistema de Check-in/Check-out API",
-        "version": settings.version,
-        "environment": settings.environment,
-        "docs_url": "/docs"
-    }
-
+# Mount static files (Frontend)
+# Check if static directory exists (it will be created during build/deploy)
+static_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "static")
+if os.path.exists(static_dir):
+    app.mount("/assets", StaticFiles(directory=os.path.join(static_dir, "assets")), name="assets")
+    
+    @app.get("/{full_path:path}")
+    async def serve_frontend(full_path: str):
+        """Serve the frontend application."""
+        # If API path, let it pass through (though router should catch it first)
+        if full_path.startswith("api/"):
+            return {"error": "Not Found"}
+            
+        # Check if file exists in static folder (e.g. favicon.ico)
+        file_path = os.path.join(static_dir, full_path)
+        if os.path.exists(file_path) and os.path.isfile(file_path):
+            return FileResponse(file_path)
+            
+        # Otherwise serve index.html for React routing
+        return FileResponse(os.path.join(static_dir, "index.html"))
+else:
+    @app.get("/")
+    async def root():
+        """Root endpoint for health check (when frontend is not built)."""
+        return {
+            "message": "Sistema de Check-in/Check-out API",
+            "version": settings.version,
+            "environment": settings.environment,
+            "docs_url": "/docs"
+        }
 
 @app.get("/health")
 async def health_check():

@@ -20,15 +20,18 @@ export interface Checkin {
   arrival_time?: string       // Hora de chegada no cliente
   start_time?: string         // Hora de início do serviço
   checkout_time?: string      // Hora de saída
+  checkin_time?: string       // Alias for arrival_time or start_time depending on context
   total_hours?: number
   activities?: string         // Atividades executadas (selecionadas)
   observations?: string       // Campo livre de observações
+  description?: string        // Alias for observations
   status: CheckinStatus
   created_at: string
   updated_at: string
   user?: User
   project?: Project
   tasks?: Task[]
+  task?: Task                 // Single task reference if needed
 }
 
 export interface Attachment {
@@ -45,7 +48,8 @@ export interface Attachment {
 // Request types
 export interface CreateCheckinRequest {
   project_id: number
-  type: CheckinType           // Tipo de check-in
+  description?: string
+  type?: CheckinType
 }
 
 export interface StartServiceRequest {
@@ -56,4 +60,5 @@ export interface CheckoutRequest {
   checkin_id: number
   task_ids: number[]          // IDs das atividades executadas
   observations?: string       // Observações do técnico
+  description?: string        // Alias for observations
 }

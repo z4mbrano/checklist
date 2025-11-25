@@ -1,0 +1,16 @@
+# Script to deploy to KingHost via FTP
+# This script assumes you have lftp installed or will use manual upload
+# Since we are in Windows, we will just print instructions.
+
+echo "========================================================"
+echo "DEPLOYMENT INSTRUCTIONS"
+echo "========================================================"
+echo "1. The frontend has been built and copied to 'backend/static'."
+echo "2. The backend has been configured to serve the frontend."
+echo "3. A new entry point 'checklist.wsgi' has been created."
+echo ""
+echo "PLEASE UPLOAD THE ENTIRE 'backend' FOLDER TO KINGHOST."
+echo "Destination: /home/vrdsolution/apps_wsgi/checklist"
+echo ""
+echo "IMPORTANT: Ensure 'checklist.wsgi' replaces the existing one on the server."
+echo "========================================================"
