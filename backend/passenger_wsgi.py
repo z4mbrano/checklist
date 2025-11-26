@@ -1,44 +1,40 @@
-import sys
+"""
+Passenger WSGI entrypoint for FastAPI running on KingHost.
+Wraps the ASGI app using ASGItoWSGI so Passenger (WSGI) can serve it.
+"""
+
 import os
-import traceback
+import sys
 
-# Define log file path
-CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
-LOG_FILE = os.path.join(CURRENT_DIR, 'startup_error.txt')
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+if BASE_DIR not in sys.path:
+    sys.path.insert(0, BASE_DIR)
 
-def application(environ, start_response):
+# Load environment variables from .env if available
+env_path = os.path.join(BASE_DIR, ".env")
+if os.path.isfile(env_path):
     try:
-        # Basic info
-        status = '200 OK'
-        output = b"Hello World from Python on KingHost!\n"
-        output += b"----------------------------------------\n"
-        output += b"Python Version: " + sys.version.encode('utf-8') + b"\n"
-        output += b"Current Directory: " + CURRENT_DIR.encode('utf-8') + b"\n"
-        
-        # Try to list directory contents
-        try:
-            files = os.listdir(CURRENT_DIR)
-            output += b"Files in directory: " + str(files).encode('utf-8') + b"\n"
-        except Exception as e:
-            output += b"Could not list directory: " + str(e).encode('utf-8') + b"\n"
-
-        response_headers = [('Content-type', 'text/plain; charset=utf-8'),
-                            ('Content-Length', str(len(output)))]
-        start_response(status, response_headers)
-        return [output]
-
+        from dotenv import load_dotenv
+        load_dotenv(env_path)
     except Exception:
-        # Log the full traceback to a file
-        try:
-            with open(LOG_FILE, 'a') as f:
-                f.write("\n--- ERROR ---\n")
-                f.write(traceback.format_exc())
-        except:
-            pass # If we can't write to file, we can't do much
-            
-        status = '500 Internal Server Error'
-        output = b"Internal Server Error - Check startup_error.txt"
-        response_headers = [('Content-type', 'text/plain'),
-                            ('Content-Length', str(len(output)))]
-        start_response(status, response_headers)
-        return [output]
+        # dotenv is optional; continue without it
+        pass
+
+# Import FastAPI app and expose WSGI application for Passenger
+try:
+    # Usa a2wsgi, compatível e já instalada no ambiente
+    from a2wsgi import WSGIMiddleware
+except ImportError as e:
+    raise RuntimeError(
+        "Pacote 'a2wsgi' não encontrado. Instale com 'pip install a2wsgi'"
+    ) from e
+
+# Troque para minimal_main durante testes iniciais, se necessário
+try:
+    from app.main import app as asgi_app
+except Exception:
+    # Fallback para app mínima caso a principal falhe por dependências
+    from app.minimal_main import app as asgi_app
+
+# Passenger procura por o objeto WSGI chamado 'application'
+application = WSGIMiddleware(asgi_app)

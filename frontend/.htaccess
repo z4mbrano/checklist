@@ -3,10 +3,15 @@
 
 <IfModule mod_rewrite.c>
   RewriteEngine On
+  # Se o subdomínio/pasta raiz do frontend for /checklist, mantenha a base
   RewriteBase /checklist/
-  RewriteRule ^index\.html$ - [L]
-  RewriteCond %{REQUEST_FILENAME} !-f
-  RewriteCond %{REQUEST_FILENAME} !-d
+
+  # Arquivos existentes (assets, imagens, etc.) são servidos diretamente
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+
+  # Fallback para SPA: envia todas as rotas ao index.html
   RewriteRule . /checklist/index.html [L]
 </IfModule>
 
@@ -102,14 +107,12 @@
 
 # Deny access to hidden files (files starting with .)
 <FilesMatch "^\.">
-  Order allow,deny
-  Deny from all
+  Require all denied
 </FilesMatch>
 
 # Deny access to specific file types
 <FilesMatch "\.(env|log|sh|sql|bak|config)$">
-  Order allow,deny
-  Deny from all
+  Require all denied
 </FilesMatch>
 
 # ============================================================================
