@@ -2,23 +2,12 @@
 # This configuration enables proper routing for React applications
 
 <IfModule mod_rewrite.c>
-  # Enable URL rewriting
   RewriteEngine On
-  RewriteBase /
-  
-  # Don't rewrite files or directories that exist
+  RewriteBase /checklist/
+  RewriteRule ^index\.html$ - [L]
   RewriteCond %{REQUEST_FILENAME} !-f
   RewriteCond %{REQUEST_FILENAME} !-d
-  
-  # For index.html, serve it directly
-  RewriteRule ^index\.html$ - [L]
-  
-  # For all other requests, redirect to index.html
-  RewriteRule . /index.html [L]
-  
-  # Force HTTPS (redirect HTTP to HTTPS)
-  RewriteCond %{HTTPS} off
-  RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+  RewriteRule . /checklist/index.html [L]
 </IfModule>
 
 # ============================================================================
