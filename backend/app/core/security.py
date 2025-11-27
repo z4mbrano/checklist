@@ -20,16 +20,18 @@ def hash_password(password: str) -> str:
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """Verify a password against its hash."""
+    """
+    Verify a password against its bcrypt hash.
+    
+    Security Note: No fallback to weaker algorithms (CWE-327 mitigation).
+    If verification fails, returns False instead of falling back to SHA256.
+    """
     try:
-        # Try direct bcrypt first (Python 3.13 compatible)
         return bcrypt.checkpw(plain_password.encode('utf-8'), hashed_password.encode('utf-8'))
-    except Exception as e:
-        print(f"Bcrypt error: {e}")
-        # Fallback to simple SHA256 for testing
-        import hashlib
-        simple_hash = hashlib.sha256(plain_password.encode()).hexdigest()
-        return simple_hash == hashed_password
+    except Exception:
+        # Log error but NEVER fallback to weaker cryptography
+        # Returning False ensures authentication fails safely
+        return False
 
 
 def create_access_token(data: Dict[str, Any], expires_delta: Optional[timedelta] = None) -> str:

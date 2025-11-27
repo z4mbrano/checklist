@@ -2,6 +2,7 @@
 Application Configuration Settings
 """
 from pydantic_settings import BaseSettings
+from pydantic import Field
 from typing import List, Optional
 import secrets
 
@@ -26,7 +27,10 @@ class Settings(BaseSettings):
     redis_url: str = "redis://localhost:6379/0"
     
     # Security
-    secret_key: str = secrets.token_urlsafe(32)
+    # CRITICAL: Secret key MUST be set via environment variable
+    # Generate with: openssl rand -base64 32
+    # Never use default value in production - tokens will be invalidated on restart
+    secret_key: str = Field(..., env="JWT_SECRET_KEY", description="JWT signing key - REQUIRED")
     access_token_expire_minutes: int = 60
     refresh_token_expire_days: int = 7
     algorithm: str = "HS256"

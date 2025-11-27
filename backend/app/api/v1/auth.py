@@ -16,6 +16,7 @@ from app.core.security import (
     hash_password,
     verify_token
 )
+from app.core.logging import get_logger
 from app.models.user import User
 from app.schemas.auth import (
     LoginRequest,
@@ -30,6 +31,7 @@ from app.core.exceptions import invalid_credentials
 
 router = APIRouter()
 security = HTTPBearer()
+logger = get_logger(__name__)
 
 
 @router.post("/login", response_model=TokenResponse)
@@ -39,55 +41,52 @@ async def login(
 ) -> Any:
     """
     Login endpoint - authenticate user and return JWT token.
+    
+    Security: Uses structured logging without exposing sensitive data.
     """
-    print(f"Login attempt for: {login_data.email}")
-    try:
-        # Find user by email
-        user = db.query(User).filter(
-            User.email == login_data.email,
-            User.is_active == True,
-            User.deleted_at.is_(None)
-        ).first()
-        print(f"User found: {user}")
+    logger.info("login_attempt", email=login_data.email)
+    
+    # Find user by email
+    user = db.query(User).filter(
+        User.email == login_data.email,
+        User.is_active == True,
+        User.deleted_at.is_(None)
+    ).first()
+    
+    # Verify user exists and password is correct
+    if not user:
+        logger.warning("login_failed_user_not_found", email=login_data.email)
+        raise invalid_credentials()
         
-        # Verify user exists and password is correct
-        if not user:
-            print("User not found")
-            raise invalid_credentials()
-            
-        if not verify_password(login_data.password, user.hashed_password):
-            print("Password mismatch")
-            raise invalid_credentials()
-        
-        # Create access and refresh tokens
-        access_token_expires = timedelta(minutes=settings.access_token_expire_minutes)
-        access_token = create_access_token(
-            data={"sub": str(user.id), "email": user.email, "role": user.role.value},
-            expires_delta=access_token_expires
-        )
-        print("Token created")
-        
-        return {
-            "access_token": access_token,
-            "token_type": "bearer",
-            "expires_in": settings.access_token_expire_minutes * 60,
-            "user": user
-        }
-    except Exception as e:
-        print(f"Login error: {e}")
-        import traceback
-        traceback.print_exc()
-        raise HTTPException(status_code=500, detail=str(e))
+    if not verify_password(login_data.password, user.hashed_password):
+        logger.warning("login_failed_invalid_password", email=login_data.email, user_id=user.id)
+        raise invalid_credentials()
+    
+    # Create access and refresh tokens
+    access_token_expires = timedelta(minutes=settings.access_token_expire_minutes)
+    access_token = create_access_token(
+        data={"sub": str(user.id), "email": user.email, "role": user.role.value},
+        expires_delta=access_token_expires
+    )
     
     refresh_token = create_refresh_token(
         data={"sub": str(user.id), "email": user.email}
     )
+    
+    logger.info("login_success", user_id=user.id, email=user.email, role=user.role.value)
     
     return TokenResponse(
         access_token=access_token,
         token_type="bearer",
         expires_in=settings.access_token_expire_minutes * 60,
         refresh_token=refresh_token,
+        user=UserInfo(
+            id=user.id,
+            name=user.name,
+            email=user.email,
+            role=user.role
+        )
+    )
         user=UserInfo(
             id=user.id,
             name=user.name,

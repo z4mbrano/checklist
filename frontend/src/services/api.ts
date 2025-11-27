@@ -79,50 +79,50 @@ import {
 
 class ProjectService {
   async getAll(): Promise<Project[]> {
-    const response = await api.get('/api/v1/projects/')
+    const response = await api.get('/projects/')
     return response.data
   }
 
   async getById(id: number): Promise<Project> {
-    const response = await api.get(`/api/v1/projects/${id}`)
+    const response = await api.get(`/projects/${id}`)
     return response.data
   }
 
   async create(data: CreateProjectRequest): Promise<Project> {
-    const response = await api.post('/api/v1/projects/', data)
+    const response = await api.post('/projects/', data)
     return response.data
   }
 
   async update(id: number, data: Partial<CreateProjectRequest>): Promise<Project> {
-    const response = await api.put(`/api/v1/projects/${id}`, data)
+    const response = await api.put(`/projects/${id}`, data)
     return response.data
   }
 
   async delete(id: number): Promise<void> {
-    await api.delete(`/api/v1/projects/${id}`)
+    await api.delete(`/projects/${id}`)
   }
 }
 
 class ClientService {
   async getAll(): Promise<Client[]> {
-    const response = await api.get('/api/v1/clients/')
+    const response = await api.get('/clients/')
     return response.data
   }
 
   async getById(id: number): Promise<Client> {
-    const response = await api.get(`/api/v1/clients/${id}`)
+    const response = await api.get(`/clients/${id}`)
     return response.data
   }
 }
 
 class TaskService {
   async getByProject(projectId: number): Promise<Task[]> {
-    const response = await api.get(`/api/v1/projects/${projectId}/tasks`)
+    const response = await api.get(`/projects/${projectId}/tasks`)
     return response.data
   }
 
   async create(data: CreateTaskRequest): Promise<Task> {
-    const response = await api.post('/api/v1/tasks/', data)
+    const response = await api.post('/tasks/', data)
     return response.data
   }
 }
@@ -131,7 +131,7 @@ class CheckinService {
   // Buscar check-in ativo do usuário
   async getCurrentCheckin(): Promise<Checkin | null> {
     try {
-      const response = await api.get('/api/v1/checkins/current')
+      const response = await api.get('/checkins/current')
       return response.data
     } catch (error: any) {
       if (error.response?.status === 404) {
@@ -143,25 +143,25 @@ class CheckinService {
 
   // Check-in de chegada no cliente
   async arrival(data: CreateCheckinRequest): Promise<Checkin> {
-    const response = await api.post('/api/v1/checkins/arrival', data)
+    const response = await api.post('/checkins/arrival', data)
     return response.data
   }
 
   // Check-in de início de serviço
   async startService(data: StartServiceRequest): Promise<Checkin> {
-    const response = await api.post('/api/v1/checkins/start-service', data)
+    const response = await api.post('/checkins/start-service', data)
     return response.data
   }
 
   // Check-out com atividades e observações
   async checkout(data: CheckoutRequest): Promise<Checkin> {
-    const response = await api.post('/api/v1/checkins/checkout', data)
+    const response = await api.post('/checkins/checkout', data)
     return response.data
   }
 
   // Histórico de check-ins
   async getHistory(page: number = 1, size: number = 10): Promise<{ items: Checkin[], total: number }> {
-    const response = await api.get(`/api/v1/checkins/`, {
+    const response = await api.get(`/checkins/`, {
       params: { page, size }
     })
     return response.data
