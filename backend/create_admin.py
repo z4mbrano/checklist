@@ -3,7 +3,7 @@ Script para criar usuário administrador inicial
 """
 from app.core.database import SessionLocal
 from app.models.user import User, UserRole
-from app.core.security import get_password_hash
+from app.core.security import hash_password
 
 def create_admin_user():
     """Cria um usuário administrador inicial"""
@@ -21,7 +21,7 @@ def create_admin_user():
         admin_user = User(
             nome="Administrador",
             email="admin@checklist.com",
-            senha_hash=get_password_hash("admin123"),
+            senha_hash=hash_password("admin123"),
             role=UserRole.ADMIN,
             is_active=True
         )
