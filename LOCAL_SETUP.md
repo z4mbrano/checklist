@@ -74,7 +74,7 @@ Abra um terminal **PowerShell** na pasta `backend`:
    - **Edite o arquivo `.env`** e ajuste a conexão com o banco:
      ```ini
      # Exemplo para MySQL local
-     DATABASE_URL=mysql+pymysql://root:sua_senha@localhost:3306/checkinsys_db
+     DATABASE_URL=mysql+pymysql://vrdsolution01:vrd2025@mysql.vrdsolution.com.br/vrdsolution01
      ```
 
 4. **Execute as migrações (Criar tabelas):**
