@@ -1,11 +1,11 @@
 import React, { useState } from 'react'
 import { ArrowLeft, AlertCircle } from 'lucide-react'
-import { Card } from '../../components/ui/Card'
-import { Button } from '../../components/ui/Button'
-import { Input } from '../../components/ui/Input'
-import { Select } from '../../components/ui/Select'
-import { Screen, Project } from '../../types/mobile'
-import { useData } from '../../contexts/DataContext'
+import { Card } from '../components/ui/Card'
+import { Button } from '../components/ui/Button'
+import { Input } from '../components/ui/Input'
+import { Select } from '../components/ui/Select'
+import { Screen, Project } from '../types/mobile'
+import { useData } from '../contexts/DataContext'
 
 interface ProjectFormScreenProps {
   onNavigate: (screen: Screen) => void

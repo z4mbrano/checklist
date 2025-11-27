@@ -1,10 +1,10 @@
 import React from 'react'
 import { ArrowLeft, Plus, Folder, ChevronRight } from 'lucide-react'
-import { useAuth } from '../../contexts/AuthContext'
-import { useData } from '../../contexts/DataContext'
-import { Card } from '../../components/ui/Card'
-import { Button } from '../../components/ui/Button'
-import { Screen, Project } from '../../types/mobile'
+import { useAuth } from '../contexts/AuthContext'
+import { useData } from '../contexts/DataContext'
+import { Card } from '../components/ui/Card'
+import { Button } from '../components/ui/Button'
+import { Screen, Project } from '../types/mobile'
 
 interface SelectProjectScreenProps {
   onNavigate: (screen: Screen) => void

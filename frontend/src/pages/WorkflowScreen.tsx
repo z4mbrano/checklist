@@ -1,12 +1,12 @@
 import React, { useState } from 'react'
 import { ArrowLeft, MapPin, Play, StopCircle, CheckCircle, Clock } from 'lucide-react'
-import { Card } from '../../components/ui/Card'
-import { Button } from '../../components/ui/Button'
-import { Input } from '../../components/ui/Input'
-import { Screen, Project, Checkin } from '../../types/mobile'
-import { useData } from '../../contexts/DataContext'
-import { useAuth } from '../../contexts/AuthContext'
-import { ACTIVITY_TAGS } from '../../constants'
+import { Card } from '../components/ui/Card'
+import { Button } from '../components/ui/Button'
+import { Input } from '../components/ui/Input'
+import { Screen, Project, Checkin } from '../types/mobile'
+import { useData } from '../contexts/DataContext'
+import { useAuth } from '../contexts/AuthContext'
+import { ACTIVITY_TAGS } from '../constants'
 
 interface WorkflowScreenProps {
   selectedProject: Project | null

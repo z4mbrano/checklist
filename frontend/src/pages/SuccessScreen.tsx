@@ -1,7 +1,7 @@
 import React from 'react'
 import { CheckCircle } from 'lucide-react'
-import { Button } from '../../components/ui/Button'
-import { Screen } from '../../types/mobile'
+import { Button } from '../components/ui/Button'
+import { Screen } from '../types/mobile'
 
 interface SuccessScreenProps {
   onNavigate: (screen: Screen) => void

@@ -1,4 +1,4 @@
-import MobileApp from '@/pages/mobile/MobileApp'
+import MobileApp from '@/pages/MobileApp'
 
 function App() {
   return (

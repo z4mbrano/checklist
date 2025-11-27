@@ -1,9 +1,9 @@
 import React from 'react'
 import { ArrowLeft, Folder, ChevronRight } from 'lucide-react'
-import { Card } from '../../components/ui/Card'
-import { Screen, Project } from '../../types/mobile'
-import { useData } from '../../contexts/DataContext'
-import { useAuth } from '../../contexts/AuthContext'
+import { Card } from '../components/ui/Card'
+import { Screen, Project } from '../types/mobile'
+import { useData } from '../contexts/DataContext'
+import { useAuth } from '../contexts/AuthContext'
 
 interface HistoryScreenProps {
   onNavigate: (screen: Screen) => void

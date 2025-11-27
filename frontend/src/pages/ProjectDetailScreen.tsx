@@ -1,13 +1,13 @@
 import React, { useState } from 'react'
 import { ArrowLeft, FileText, Edit, History } from 'lucide-react'
-import { Card } from '../../components/ui/Card'
-import { Modal } from '../../components/ui/Modal'
-import { Input } from '../../components/ui/Input'
-import { Button } from '../../components/ui/Button'
-import { Screen, Project, Checkin } from '../../types/mobile'
-import { useData } from '../../contexts/DataContext'
-import { useAuth } from '../../contexts/AuthContext'
-import { ACTIVITY_TAGS } from '../../constants'
+import { Card } from '../components/ui/Card'
+import { Modal } from '../components/ui/Modal'
+import { Input } from '../components/ui/Input'
+import { Button } from '../components/ui/Button'
+import { Screen, Project, Checkin } from '../types/mobile'
+import { useData } from '../contexts/DataContext'
+import { useAuth } from '../contexts/AuthContext'
+import { ACTIVITY_TAGS } from '../constants'
 
 // --- PRINT STYLES ---
 const PrintStyles = () => (
