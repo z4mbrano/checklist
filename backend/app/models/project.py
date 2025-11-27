@@ -50,7 +50,7 @@ class Project(Base):
     deleted_at = Column(DateTime(timezone=True))  # For soft delete
     
     # Relationships
-    cliente = relationship("Client", back_populates="projetos")
+    client = relationship("Client", back_populates="projetos")
     responsavel = relationship("User", back_populates="projetos")
     checkins = relationship("Checkin", back_populates="projeto")
     

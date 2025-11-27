@@ -12,11 +12,11 @@ interface SelectProjectScreenProps {
 }
 
 export const SelectProjectScreen = ({ onNavigate, onSelectProject }: SelectProjectScreenProps) => {
-  const { user } = useAuth()
+  const { user, isAdmin } = useAuth()
   const { projects } = useData()
 
   // Filter projects based on permissions
-  const filteredProjects = user?.isAdmin 
+  const filteredProjects = isAdmin 
     ? projects 
     : projects.filter(p => p.responsibleEmail === user?.email)
 
@@ -28,14 +28,14 @@ export const SelectProjectScreen = ({ onNavigate, onSelectProject }: SelectProje
         </button>
         <div>
           <h1 className="text-xl font-bold text-slate-800">Selecionar Projeto</h1>
-          {user && !user.isAdmin && (
+          {user && !isAdmin && (
             <p className="text-xs text-slate-500">Seus projetos atribuídos</p>
           )}
         </div>
       </header>
 
       <div className="flex-1 space-y-4">
-        {user?.isAdmin && (
+        {isAdmin && (
           <Button 
             variant="outline" 
             onClick={() => onNavigate('addProject')} 

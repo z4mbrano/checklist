@@ -40,23 +40,44 @@ async def login(
     """
     Login endpoint - authenticate user and return JWT token.
     """
-    # Find user by email
-    user = db.query(User).filter(
-        User.email == login_data.email,
-        User.is_active == True,
-        User.deleted_at.is_(None)
-    ).first()
-    
-    # Verify user exists and password is correct
-    if not user or not verify_password(login_data.password, user.hashed_password):
-        raise invalid_credentials()
-    
-    # Create access and refresh tokens
-    access_token_expires = timedelta(minutes=settings.access_token_expire_minutes)
-    access_token = create_access_token(
-        data={"sub": str(user.id), "email": user.email, "role": user.role.value},
-        expires_delta=access_token_expires
-    )
+    print(f"Login attempt for: {login_data.email}")
+    try:
+        # Find user by email
+        user = db.query(User).filter(
+            User.email == login_data.email,
+            User.is_active == True,
+            User.deleted_at.is_(None)
+        ).first()
+        print(f"User found: {user}")
+        
+        # Verify user exists and password is correct
+        if not user:
+            print("User not found")
+            raise invalid_credentials()
+            
+        if not verify_password(login_data.password, user.hashed_password):
+            print("Password mismatch")
+            raise invalid_credentials()
+        
+        # Create access and refresh tokens
+        access_token_expires = timedelta(minutes=settings.access_token_expire_minutes)
+        access_token = create_access_token(
+            data={"sub": str(user.id), "email": user.email, "role": user.role.value},
+            expires_delta=access_token_expires
+        )
+        print("Token created")
+        
+        return {
+            "access_token": access_token,
+            "token_type": "bearer",
+            "expires_in": settings.access_token_expire_minutes * 60,
+            "user": user
+        }
+    except Exception as e:
+        print(f"Login error: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
     
     refresh_token = create_refresh_token(
         data={"sub": str(user.id), "email": user.email}

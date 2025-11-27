@@ -40,7 +40,7 @@ class Client(Base):
     deleted_at = Column(DateTime(timezone=True))  # For soft delete
     
     # Relationships
-    projetos = relationship("Project", back_populates="cliente")
+    projetos = relationship("Project", back_populates="client")
     
     def __repr__(self):
         return f"<Client(id={self.id}, nome='{self.nome}', cnpj='{self.cnpj}')>"
