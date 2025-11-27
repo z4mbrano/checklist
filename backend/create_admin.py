@@ -11,7 +11,7 @@ def create_admin_user():
     
     try:
         # Verifica se já existe um usuário admin
-        existing_admin = db.query(User).filter(User.email == "admin@checklist.com").first()
+        existing_admin = db.query(User).filter(User.email == "admin@vrdsolution.com.br").first()
         
         if existing_admin:
             print("⚠️  Usuário admin já existe!")
@@ -19,9 +19,9 @@ def create_admin_user():
         
         # Cria novo usuário admin
         admin_user = User(
-            nome="Administrador",
-            email="admin@checklist.com",
-            senha_hash=hash_password("admin123"),
+            name="Administrador",
+            email="admin@vrdsolution.com.br",
+            hashed_password=hash_password("admin123"),
             role=UserRole.ADMIN,
             is_active=True
         )

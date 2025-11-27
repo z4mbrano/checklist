@@ -2,11 +2,9 @@ import axios from 'axios'
 import { useAuthStore } from '@/store/authStore'
 
 // API base configuration
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
-
-if (!API_BASE_URL) {
-  throw new Error('VITE_API_BASE_URL is not defined in environment variables')
-}
+// Em desenvolvimento, usa o proxy do Vite (/api)
+// Em produção, usa a variável de ambiente ou caminho relativo
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1'
 
 // Create axios instance
 export const api = axios.create({

@@ -24,9 +24,15 @@ def create_admin_direct():
         
         with connection.cursor() as cursor:
             # Verifica se já existe
-            cursor.execute("SELECT id FROM usuarios WHERE email = 'admin@checklist.com'")
-            if cursor.fetchone():
-                print("⚠️  Usuário admin já existe!")
+            cursor.execute("SELECT id FROM usuarios WHERE email = 'admin@vrdsolution.com.br'")
+            existing_user = cursor.fetchone()
+            
+            if existing_user:
+                print("⚠️  Usuário admin já existe! Atualizando senha...")
+                update_sql = "UPDATE usuarios SET hashed_password = %s WHERE email = 'admin@vrdsolution.com.br'"
+                cursor.execute(update_sql, (password_hash,))
+                connection.commit()
+                print("✅ Senha atualizada para: admin123")
                 return
             
             # Insere novo usuário
@@ -34,11 +40,11 @@ def create_admin_direct():
                 INSERT INTO usuarios (name, email, hashed_password, role, is_active, created_at)
                 VALUES (%s, %s, %s, %s, %s, NOW())
             """
-            cursor.execute(sql, ('Administrador', 'admin@checklist.com', password_hash, 'ADMIN', 1))
+            cursor.execute(sql, ('Administrador', 'admin@vrdsolution.com.br', password_hash, 'ADMIN', 1))
             connection.commit()
             
             print("✅ Usuário administrador criado com sucesso!")
-            print(f"   Email: admin@checklist.com")
+            print(f"   Email: admin@vrdsolution.com.br")
             print(f"   Senha: admin123")
             
     except Exception as e:

@@ -9,20 +9,23 @@ from fastapi import HTTPException, status
 from app.core.config import settings
 
 # Password context for hashing
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
+# pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+import bcrypt
 
 def hash_password(password: str) -> str:
     """Hash a password using bcrypt."""
-    return pwd_context.hash(password)
+    # return pwd_context.hash(password)
+    salt = bcrypt.gensalt()
+    return bcrypt.hashpw(password.encode('utf-8'), salt).decode('utf-8')
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Verify a password against its hash."""
-    # Try bcrypt first
     try:
-        return pwd_context.verify(plain_password, hashed_password)
-    except:
+        # Try direct bcrypt first (Python 3.13 compatible)
+        return bcrypt.checkpw(plain_password.encode('utf-8'), hashed_password.encode('utf-8'))
+    except Exception as e:
+        print(f"Bcrypt error: {e}")
         # Fallback to simple SHA256 for testing
         import hashlib
         simple_hash = hashlib.sha256(plain_password.encode()).hexdigest()
