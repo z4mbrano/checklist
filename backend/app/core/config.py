@@ -23,8 +23,25 @@ class Settings(BaseSettings):
 
     test_database_url: str = "sqlite:///./test_checklist.db"
     
-    # Redis
-    redis_url: str = "redis://localhost:6379/0"
+    # Redis Cache Configuration
+    # Format: redis://[user:password@]host:port/database
+    # Example: redis://localhost:6379/0 (default local Redis)
+    # Production: redis://:password@redis-server:6379/0
+    REDIS_URL: str = Field(
+        default="redis://localhost:6379/0",
+        env="REDIS_URL",
+        description="Redis connection URL for caching"
+    )
+    REDIS_CACHE_ENABLED: bool = Field(
+        default=True,
+        env="REDIS_CACHE_ENABLED",
+        description="Enable/disable Redis caching (disable for local dev without Redis)"
+    )
+    REDIS_DEFAULT_TTL: int = Field(
+        default=60,
+        env="REDIS_DEFAULT_TTL",
+        description="Default cache TTL in seconds"
+    )
     
     # Security
     # CRITICAL: Secret key MUST be set via environment variable

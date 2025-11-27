@@ -105,7 +105,7 @@ class SQLAlchemyProjectRepository(IProjectRepository):
         
         return ORMProject(
             id=domain_project.id,
-            nome=domain_project.name,
+            nome=domain_project.name.value if hasattr(domain_project.name, 'value') else domain_project.name,
             descricao=domain_project.description,
             data_inicio=domain_project.start_date,
             data_fim_prevista=domain_project.end_date_planned,
@@ -129,7 +129,7 @@ class SQLAlchemyProjectRepository(IProjectRepository):
         """
         from app.models.project import ProjectStatus as ORMProjectStatus
         
-        orm_project.nome = domain_project.name
+        orm_project.nome = domain_project.name.value if hasattr(domain_project.name, 'value') else domain_project.name
         orm_project.descricao = domain_project.description
         orm_project.data_inicio = domain_project.start_date
         orm_project.data_fim_prevista = domain_project.end_date_planned
@@ -210,7 +210,12 @@ class SQLAlchemyProjectRepository(IProjectRepository):
         status: Optional[ProjectStatus] = None,
         client_id: Optional[int] = None
     ) -> List[DomainProject]:
-        """Get projects with filtering and pagination."""
+        """
+        Get projects with filtering and OFFSET pagination.
+        
+        Note: For large datasets, use get_with_cursor() instead.
+        OFFSET pagination degrades with deep pages (O(n) complexity).
+        """
         try:
             query = (
                 self.session.query(ORMProject)
@@ -237,6 +242,91 @@ class SQLAlchemyProjectRepository(IProjectRepository):
         except Exception as e:
             logger.error("project_list_failed", error=str(e), exc_info=True)
             raise RepositoryError(f"Failed to list projects: {str(e)}") from e
+    
+    def get_with_cursor(
+        self,
+        cursor: Optional[int] = None,
+        limit: int = 20,
+        status: Optional[ProjectStatus] = None,
+        client_id: Optional[int] = None
+    ) -> tuple[List[DomainProject], Optional[int]]:
+        """
+        Get projects with CURSOR-BASED pagination (high performance).
+        
+        Performance Advantage:
+        - No OFFSET (avoids full table scan on deep pages)
+        - Uses indexed WHERE clause (id > cursor)
+        - O(log n) via index seek vs O(n) via offset scan
+        
+        Args:
+            cursor: Last seen project ID (None for first page)
+            limit: Page size (default 20, max 100)
+            status: Filter by status
+            client_id: Filter by client
+            
+        Returns:
+            Tuple of (projects, next_cursor)
+            - projects: List of domain entities
+            - next_cursor: ID of last item (for next page) or None if last page
+        
+        Example:
+            # First page
+            projects, cursor = repo.get_with_cursor(cursor=None, limit=20)
+            
+            # Next page
+            projects, cursor = repo.get_with_cursor(cursor=cursor, limit=20)
+        """
+        try:
+            query = (
+                self.session.query(ORMProject)
+                .options(
+                    joinedload(ORMProject.client),
+                    joinedload(ORMProject.responsavel)
+                )
+                .filter(ORMProject.deleted_at.is_(None))
+            )
+            
+            # Cursor filtering (keyset pagination)
+            if cursor is not None:
+                query = query.filter(ORMProject.id > cursor)
+            
+            # Apply filters
+            if status:
+                from app.models.project import ProjectStatus as ORMProjectStatus
+                query = query.filter(ORMProject.status == ORMProjectStatus(status.value))
+            
+            if client_id:
+                query = query.filter(ORMProject.cliente_id == client_id)
+            
+            # Order by ID (CRITICAL: must match cursor column)
+            query = query.order_by(ORMProject.id)
+            
+            # Fetch limit + 1 to check if there's a next page
+            orm_projects = query.limit(limit + 1).all()
+            
+            # Determine next cursor
+            has_next = len(orm_projects) > limit
+            if has_next:
+                orm_projects = orm_projects[:limit]  # Trim extra item
+                next_cursor = orm_projects[-1].id if orm_projects else None
+            else:
+                next_cursor = None
+            
+            domain_projects = [self._to_domain(p) for p in orm_projects]
+            
+            logger.debug(
+                "cursor_pagination_executed",
+                cursor=cursor,
+                returned_count=len(domain_projects),
+                has_next=has_next,
+                next_cursor=next_cursor
+            )
+            
+            return domain_projects, next_cursor
+            
+        except Exception as e:
+            logger.error("cursor_pagination_failed", cursor=cursor, error=str(e), exc_info=True)
+            raise RepositoryError(f"Failed to paginate projects: {str(e)}") from e
     
     def get_by_client(self, client_id: int) -> List[DomainProject]:
         """Get all projects for a client."""

@@ -9,6 +9,7 @@ Responsibilities:
 - Enforce business rules and validation
 - Manage transactions (via Unit of Work pattern - future enhancement)
 - Transform DTOs to domain entities and vice versa
+- Cache management for high-performance reads
 
 Does NOT:
 - Know about HTTP/REST (that's the controller's job)
@@ -19,6 +20,10 @@ Architecture Pattern: Application Service (DDD)
 - Stateless (no instance variables except dependencies)
 - Transaction boundary (each method is one transaction)
 - Thin orchestration layer
+
+Performance Optimizations:
+- Cache-Aside pattern for read-heavy operations
+- Automatic cache invalidation on mutations
 """
 from typing import List, Optional
 from datetime import date
@@ -34,6 +39,11 @@ from app.domain.repositories.project_repository import (
     ProjectNotFoundError
 )
 from app.core.logging import get_logger
+from app.core.cache import (
+    CacheService,
+    invalidate_project_cache,
+    invalidate_projects_list_cache
+)
 
 logger = get_logger(__name__)
 
@@ -42,10 +52,11 @@ class ProjectService:
     """
     Application service for project operations.
     
-    Design Pattern: Facade + Coordinator
+    Design Pattern: Facade + Coordinator + Cache-Aside
     - Provides high-level API for project operations
     - Coordinates between domain entities and repositories
     - Enforces business workflows
+    - Manages cache lifecycle (read-through + write-through invalidation)
     """
     
     def __init__(self, project_repository: IProjectRepository):
@@ -56,6 +67,7 @@ class ProjectService:
             project_repository: Repository abstraction (injected via DI)
         """
         self.repository = project_repository
+        self.cache = CacheService(namespace="projects", default_ttl=300)  # 5min TTL
     
     # ========================================
     # CRUD Operations
@@ -113,6 +125,9 @@ class ProjectService:
         # Persist via repository
         saved_project = self.repository.save(project)
         
+        # Invalidate list caches (new project added)
+        await invalidate_projects_list_cache()
+        
         logger.info(
             "project_created_via_service",
             project_id=saved_project.id,
@@ -122,9 +137,14 @@ class ProjectService:
         
         return saved_project
     
-    def get_project(self, project_id: int) -> Project:
+    async def get_project(self, project_id: int) -> Project:
         """
-        Retrieve project by ID.
+        Retrieve project by ID with caching.
+        
+        Cache Strategy:
+        - Cache key: "project:{id}"
+        - TTL: 5 minutes
+        - Invalidated on: update, delete, status change
         
         Args:
             project_id: Unique identifier
@@ -135,10 +155,24 @@ class ProjectService:
         Raises:
             ProjectNotFoundError: If project doesn't exist
         """
+        # Try cache first (Cache-Aside pattern)
+        cache_key = f"project:{project_id}"
+        cached = await self.cache.get(cache_key)
+        
+        if cached:
+            logger.debug("project_cache_hit", project_id=project_id)
+            # Deserialize from dict back to domain entity
+            return Project(**cached)
+        
+        # Cache miss - fetch from DB
+        logger.debug("project_cache_miss", project_id=project_id)
         project = self.repository.get_by_id(project_id)
         
         if not project:
             raise ProjectNotFoundError(project_id)
+        
+        # Store in cache (serialize domain entity to dict)
+        await self.cache.set(cache_key, project.__dict__, ttl=300)
         
         return project
     
@@ -150,7 +184,9 @@ class ProjectService:
         client_id: Optional[int] = None
     ) -> List[Project]:
         """
-        List projects with optional filtering.
+        List projects with OFFSET pagination (legacy).
+        
+        Note: For better performance on large datasets, use list_projects_cursor().
         
         Args:
             skip: Pagination offset
@@ -171,7 +207,44 @@ class ProjectService:
             client_id=client_id
         )
     
-    def update_project(
+    def list_projects_cursor(
+        self,
+        cursor: Optional[int] = None,
+        limit: int = 20,
+        status: Optional[ProjectStatus] = None,
+        client_id: Optional[int] = None
+    ) -> tuple[List[Project], Optional[int]]:
+        """
+        List projects with CURSOR-BASED pagination (recommended for performance).
+        
+        Performance: 10-100x faster than offset on deep pages.
+        
+        Args:
+            cursor: Last seen project ID (None for first page)
+            limit: Page size (max 100)
+            status: Filter by status
+            client_id: Filter by client
+            
+        Returns:
+            Tuple of (projects, next_cursor)
+        
+        Example:
+            # First page
+            projects, cursor = service.list_projects_cursor(limit=20)
+            
+            # Next page  
+            projects, cursor = service.list_projects_cursor(cursor=cursor, limit=20)
+        """
+        limit = min(limit, 100)
+        
+        return self.repository.get_with_cursor(
+            cursor=cursor,
+            limit=limit,
+            status=status,
+            client_id=client_id
+        )
+    
+    async def update_project(
         self,
         project_id: int,
         name: Optional[str] = None,
@@ -181,7 +254,7 @@ class ProjectService:
         estimated_value: Optional[str] = None
     ) -> Project:
         """
-        Update project details.
+        Update project details with cache invalidation.
         
         Business Rule: Cannot modify completed/cancelled projects (enforced by domain).
         
@@ -200,8 +273,8 @@ class ProjectService:
             ProjectNotFoundError: If project doesn't exist
             BusinessRuleViolationError: If trying to modify immutable project
         """
-        # Retrieve existing project
-        project = self.get_project(project_id)
+        # Retrieve existing project (will use cache if available)
+        project = await self.get_project(project_id)
         
         # Use domain method to update (enforces business rules)
         project.update_details(
@@ -215,13 +288,17 @@ class ProjectService:
         # Persist changes
         updated_project = self.repository.save(project)
         
+        # Invalidate caches (project changed)
+        await invalidate_project_cache(project_id)
+        await invalidate_projects_list_cache()
+        
         logger.info("project_updated_via_service", project_id=project_id)
         
         return updated_project
     
-    def delete_project(self, project_id: int) -> bool:
+    async def delete_project(self, project_id: int) -> bool:
         """
-        Soft delete project.
+        Soft delete project with cache invalidation.
         
         Args:
             project_id: Project to delete
@@ -232,6 +309,10 @@ class ProjectService:
         deleted = self.repository.delete(project_id)
         
         if deleted:
+            # Invalidate caches (project deleted)
+            await invalidate_project_cache(project_id)
+            await invalidate_projects_list_cache()
+            
             logger.info("project_deleted_via_service", project_id=project_id)
         
         return deleted
@@ -240,9 +321,9 @@ class ProjectService:
     # Business Operations (Workflows)
     # ========================================
     
-    def start_project(self, project_id: int) -> Project:
+    async def start_project(self, project_id: int) -> Project:
         """
-        Start a project (transition to EM_ANDAMENTO).
+        Start a project (transition to EM_ANDAMENTO) with cache invalidation.
         
         Business Rule: Can only start from PLANEJAMENTO or PAUSADO.
         
@@ -256,13 +337,17 @@ class ProjectService:
             ProjectNotFoundError: If project doesn't exist
             InvalidStateTransitionError: If cannot start from current state
         """
-        project = self.get_project(project_id)
+        project = await self.get_project(project_id)
         
         # Domain entity enforces state transition rules
         project.start()
         
         # Persist state change
         updated_project = self.repository.save(project)
+        
+        # Invalidate caches (status changed)
+        await invalidate_project_cache(project_id)
+        await invalidate_projects_list_cache()
         
         logger.info(
             "project_started",
@@ -272,28 +357,32 @@ class ProjectService:
         
         return updated_project
     
-    def pause_project(self, project_id: int) -> Project:
+    async def pause_project(self, project_id: int) -> Project:
         """
-        Pause an active project.
+        Pause an active project with cache invalidation.
         
         Business Rule: Can only pause active projects.
         """
-        project = self.get_project(project_id)
+        project = await self.get_project(project_id)
         project.pause()
         
         updated_project = self.repository.save(project)
+        
+        # Invalidate caches (status changed)
+        await invalidate_project_cache(project_id)
+        await invalidate_projects_list_cache()
         
         logger.info("project_paused", project_id=project_id)
         
         return updated_project
     
-    def complete_project(
+    async def complete_project(
         self,
         project_id: int,
         completion_date: Optional[date] = None
     ) -> Project:
         """
-        Mark project as completed.
+        Mark project as completed with cache invalidation.
         
         Business Rule: Can only complete active projects.
         
@@ -304,10 +393,14 @@ class ProjectService:
         Returns:
             Completed project
         """
-        project = self.get_project(project_id)
+        project = await self.get_project(project_id)
         project.complete(completion_date)
         
         updated_project = self.repository.save(project)
+        
+        # Invalidate caches (status changed + completion date set)
+        await invalidate_project_cache(project_id)
+        await invalidate_projects_list_cache()
         
         logger.info(
             "project_completed",
@@ -317,9 +410,9 @@ class ProjectService:
         
         return updated_project
     
-    def cancel_project(self, project_id: int, reason: Optional[str] = None) -> Project:
+    async def cancel_project(self, project_id: int, reason: Optional[str] = None) -> Project:
         """
-        Cancel project.
+        Cancel project with cache invalidation.
         
         Business Rule: Cannot cancel completed projects.
         
@@ -330,10 +423,14 @@ class ProjectService:
         Returns:
             Cancelled project
         """
-        project = self.get_project(project_id)
+        project = await self.get_project(project_id)
         project.cancel(reason)
         
         updated_project = self.repository.save(project)
+        
+        # Invalidate caches (status changed)
+        await invalidate_project_cache(project_id)
+        await invalidate_projects_list_cache()
         
         logger.info("project_cancelled", project_id=project_id, reason=reason or "Not specified")
         

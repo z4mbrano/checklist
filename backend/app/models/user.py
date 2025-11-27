@@ -39,7 +39,7 @@ class User(Base):
     # Relationships
     projetos = relationship("Project", back_populates="responsavel")
     checkins = relationship("Checkin", back_populates="usuario")
-    # audit_logs = relationship("AuditLog", back_populates="usuario")
+    audit_logs = relationship("AuditLog", back_populates="usuario")
     
     def __repr__(self):
         return f"<User(id={self.id}, email='{self.email}', role='{self.role}')>"
