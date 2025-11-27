@@ -87,13 +87,6 @@ async def login(
             role=user.role
         )
     )
-        user=UserInfo(
-            id=user.id,
-            name=user.name,
-            email=user.email,
-            role=user.role
-        )
-    )
 
 
 @router.post("/refresh", response_model=TokenResponse)

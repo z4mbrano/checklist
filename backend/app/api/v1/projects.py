@@ -1,67 +1,355 @@
 """
-Project management endpoints
-"""
-from typing import List, Any
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
+Project API Endpoints (Controller Layer)
 
-from app.api.deps import get_db, get_current_active_user
-from app.models.project import Project, ProjectStatus
-from app.schemas.project import ProjectResponse, ProjectCreate, ProjectUpdate
+Thin HTTP controllers that delegate to service layer.
+Responsibilities: HTTP concerns only (request/response, status codes, auth).
+
+Architecture Pattern: Controller (MVC/Clean Architecture)
+- Parse HTTP requests → DTOs
+- Call service layer (business logic lives there)
+- Map domain entities → HTTP responses
+- Handle HTTP-specific errors (4xx, 5xx)
+
+Does NOT:
+- Contain business logic (that's in ProjectService)
+- Know about database (that's in repositories)
+- Manipulate domain entities directly (use service methods)
+"""
+from typing import List
+from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi.responses import JSONResponse
+
+from app.api.deps import get_current_active_user
+from app.models.user import User
+from app.services.project_service import ProjectService
+from app.services.dependencies import get_project_service
+from app.schemas.project import (
+    ProjectCreateRequest,
+    ProjectUpdateRequest,
+    ProjectStatusTransitionRequest,
+    ProjectResponse,
+    ProjectStatisticsResponse
+)
+from app.domain.entities.project import (
+    ProjectStatus,
+    BusinessRuleViolationError,
+    InvalidStateTransitionError
+)
+from app.domain.repositories.project_repository import ProjectNotFoundError
+from app.core.logging import get_logger
 
 router = APIRouter()
+logger = get_logger(__name__)
 
-@router.get("/", response_model=List[ProjectResponse])
-async def read_projects(
-    db: Session = Depends(get_db),
-    skip: int = 0,
-    limit: int = 100,
-    current_user = Depends(get_current_active_user)
-) -> Any:
-    """
-    Retrieve projects.
-    """
-    projects = db.query(Project).filter(Project.deleted_at.is_(None)).offset(skip).limit(limit).all()
-    return projects
 
-@router.post("/", response_model=ProjectResponse)
+# ========================================
+# CRUD Endpoints
+# ========================================
+
+@router.post("/", response_model=ProjectResponse, status_code=status.HTTP_201_CREATED)
 async def create_project(
     *,
-    db: Session = Depends(get_db),
-    project_in: ProjectCreate,
-    current_user = Depends(get_current_active_user)
-) -> Any:
+    request: ProjectCreateRequest,
+    service: ProjectService = Depends(get_project_service),
+    current_user: User = Depends(get_current_active_user)
+) -> ProjectResponse:
     """
-    Create new project.
+    Create a new project.
+    
+    Business Rules:
+    - End date must be after start date
+    - Name is required and non-empty
+    - Client and responsible user must exist
+    
+    Returns:
+        201: Project created successfully
+        400: Business rule violation
+        401: Unauthorized
     """
-    project = Project(
-        nome=project_in.name,
-        descricao=project_in.description,
-        data_inicio=project_in.start_date,
-        data_fim_prevista=project_in.end_date,
-        status=project_in.status,
-        cliente_id=project_in.client_id,
-        responsavel_id=current_user.id  # Assign current user as responsible for now
+    try:
+        # Service layer handles business logic
+        project = service.create_project(
+            name=request.name,
+            description=request.description,
+            start_date=request.start_date,
+            end_date_planned=request.end_date_planned,
+            client_id=request.client_id,
+            responsible_user_id=request.responsible_user_id,
+            estimated_value=request.estimated_value
+        )
+        
+        # Map domain entity to DTO
+        return ProjectResponse.from_domain(project)
+        
+    except BusinessRuleViolationError as e:
+        logger.warning("project_creation_failed", reason=str(e), user_id=current_user.id)
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+
+
+@router.get("/", response_model=List[ProjectResponse])
+async def list_projects(
+    *,
+    skip: int = Query(0, ge=0, description="Number of records to skip"),
+    limit: int = Query(100, ge=1, le=100, description="Maximum number of records"),
+    status_filter: ProjectStatus = Query(None, description="Filter by project status"),
+    client_id: int = Query(None, gt=0, description="Filter by client ID"),
+    service: ProjectService = Depends(get_project_service),
+    current_user: User = Depends(get_current_active_user)
+) -> List[ProjectResponse]:
+    """
+    List projects with optional filtering and pagination.
+    
+    Query Parameters:
+    - skip: Pagination offset (default: 0)
+    - limit: Max results per page (default: 100, max: 100)
+    - status_filter: Filter by project status
+    - client_id: Filter by client
+    
+    Returns:
+        200: List of projects
+        401: Unauthorized
+    """
+    projects = service.list_projects(
+        skip=skip,
+        limit=limit,
+        status=status_filter,
+        client_id=client_id
     )
-    db.add(project)
-    db.commit()
-    db.refresh(project)
-    return project
+    
+    return [ProjectResponse.from_domain(p) for p in projects]
+
 
 @router.get("/{project_id}", response_model=ProjectResponse)
-async def read_project(
+async def get_project(
     *,
-    db: Session = Depends(get_db),
     project_id: int,
-    current_user = Depends(get_current_active_user)
-) -> Any:
+    service: ProjectService = Depends(get_project_service),
+    current_user: User = Depends(get_current_active_user)
+) -> ProjectResponse:
     """
     Get project by ID.
+    
+    Returns:
+        200: Project details
+        404: Project not found
+        401: Unauthorized
     """
-    project = db.query(Project).filter(Project.id == project_id, Project.deleted_at.is_(None)).first()
-    if not project:
+    try:
+        project = service.get_project(project_id)
+        return ProjectResponse.from_domain(project)
+        
+    except ProjectNotFoundError as e:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Project not found"
+            detail=str(e)
         )
-    return project
+
+
+@router.put("/{project_id}", response_model=ProjectResponse)
+async def update_project(
+    *,
+    project_id: int,
+    request: ProjectUpdateRequest,
+    service: ProjectService = Depends(get_project_service),
+    current_user: User = Depends(get_current_active_user)
+) -> ProjectResponse:
+    """
+    Update project details.
+    
+    Business Rule: Cannot update completed/cancelled projects.
+    
+    Returns:
+        200: Project updated successfully
+        400: Business rule violation
+        404: Project not found
+        401: Unauthorized
+    """
+    try:
+        project = service.update_project(
+            project_id=project_id,
+            name=request.name,
+            description=request.description,
+            end_date_planned=request.end_date_planned,
+            observations=request.observations,
+            estimated_value=request.estimated_value
+        )
+        
+        return ProjectResponse.from_domain(project)
+        
+    except ProjectNotFoundError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(e)
+        )
+    except BusinessRuleViolationError as e:
+        logger.warning("project_update_failed", project_id=project_id, reason=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+
+
+@router.delete("/{project_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_project(
+    *,
+    project_id: int,
+    service: ProjectService = Depends(get_project_service),
+    current_user: User = Depends(get_current_active_user)
+) -> None:
+    """
+    Soft delete project.
+    
+    Returns:
+        204: Project deleted successfully
+        404: Project not found
+        401: Unauthorized
+    """
+    deleted = service.delete_project(project_id)
+    
+    if not deleted:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Project with ID {project_id} not found"
+        )
+
+
+# ========================================
+# Business Operation Endpoints
+# ========================================
+
+@router.post("/{project_id}/start", response_model=ProjectResponse)
+async def start_project(
+    *,
+    project_id: int,
+    service: ProjectService = Depends(get_project_service),
+    current_user: User = Depends(get_current_active_user)
+) -> ProjectResponse:
+    """
+    Start a project (transition to EM_ANDAMENTO).
+    
+    Business Rule: Can only start from PLANEJAMENTO or PAUSADO.
+    
+    Returns:
+        200: Project started successfully
+        400: Invalid state transition
+        404: Project not found
+    """
+    try:
+        project = service.start_project(project_id)
+        return ProjectResponse.from_domain(project)
+        
+    except ProjectNotFoundError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+    except InvalidStateTransitionError as e:
+        logger.warning("project_start_failed", project_id=project_id, reason=str(e))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+
+@router.post("/{project_id}/pause", response_model=ProjectResponse)
+async def pause_project(
+    *,
+    project_id: int,
+    service: ProjectService = Depends(get_project_service),
+    current_user: User = Depends(get_current_active_user)
+) -> ProjectResponse:
+    """
+    Pause an active project.
+    
+    Business Rule: Can only pause EM_ANDAMENTO projects.
+    """
+    try:
+        project = service.pause_project(project_id)
+        return ProjectResponse.from_domain(project)
+        
+    except ProjectNotFoundError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+    except InvalidStateTransitionError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+
+@router.post("/{project_id}/complete", response_model=ProjectResponse)
+async def complete_project(
+    *,
+    project_id: int,
+    request: ProjectStatusTransitionRequest = None,
+    service: ProjectService = Depends(get_project_service),
+    current_user: User = Depends(get_current_active_user)
+) -> ProjectResponse:
+    """
+    Mark project as completed.
+    
+    Business Rule: Can only complete active projects.
+    """
+    try:
+        completion_date = request.completion_date if request else None
+        project = service.complete_project(project_id, completion_date)
+        return ProjectResponse.from_domain(project)
+        
+    except ProjectNotFoundError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+    except InvalidStateTransitionError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+
+@router.post("/{project_id}/cancel", response_model=ProjectResponse)
+async def cancel_project(
+    *,
+    project_id: int,
+    request: ProjectStatusTransitionRequest = None,
+    service: ProjectService = Depends(get_project_service),
+    current_user: User = Depends(get_current_active_user)
+) -> ProjectResponse:
+    """
+    Cancel project.
+    
+    Business Rule: Cannot cancel completed projects.
+    """
+    try:
+        reason = request.cancellation_reason if request else None
+        project = service.cancel_project(project_id, reason)
+        return ProjectResponse.from_domain(project)
+        
+    except ProjectNotFoundError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+    except InvalidStateTransitionError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+
+# ========================================
+# Query/Analytics Endpoints
+# ========================================
+
+@router.get("/analytics/statistics", response_model=ProjectStatisticsResponse)
+async def get_project_statistics(
+    *,
+    service: ProjectService = Depends(get_project_service),
+    current_user: User = Depends(get_current_active_user)
+) -> ProjectStatisticsResponse:
+    """
+    Get project statistics across all statuses.
+    
+    Use Case: Dashboard widgets, executive reports
+    
+    Returns:
+        200: Statistics dictionary
+    """
+    stats = service.get_project_statistics()
+    return ProjectStatisticsResponse(**stats)
+
+
+@router.get("/analytics/overdue", response_model=List[ProjectResponse])
+async def get_overdue_projects(
+    *,
+    service: ProjectService = Depends(get_project_service),
+    current_user: User = Depends(get_current_active_user)
+) -> List[ProjectResponse]:
+    """
+    Get projects that are past their deadline.
+    
+    Use Case: Alert dashboard, manager notifications
+    """
+    projects = service.get_overdue_projects()
+    return [ProjectResponse.from_domain(p) for p in projects]
