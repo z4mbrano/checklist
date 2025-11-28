@@ -68,7 +68,7 @@ async def create_project(
     """
     try:
         # Service layer handles business logic
-        project = service.create_project(
+        project = await service.create_project(
             name=request.name,
             description=request.description,
             start_date=request.start_date,

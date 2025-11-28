@@ -73,7 +73,7 @@ class ProjectService:
     # CRUD Operations
     # ========================================
     
-    def create_project(
+    async def create_project(
         self,
         name: str,
         client_id: int,

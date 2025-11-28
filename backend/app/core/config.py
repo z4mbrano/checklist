@@ -47,7 +47,7 @@ class Settings(BaseSettings):
     # CRITICAL: Secret key MUST be set via environment variable
     # Generate with: openssl rand -base64 32
     # Never use default value in production - tokens will be invalidated on restart
-    secret_key: str = Field(..., env="JWT_SECRET_KEY", description="JWT signing key - REQUIRED")
+    secret_key: str = Field(..., description="JWT signing key - REQUIRED")
     access_token_expire_minutes: int = 60
     refresh_token_expire_days: int = 7
     algorithm: str = "HS256"
