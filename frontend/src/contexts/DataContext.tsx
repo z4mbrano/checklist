@@ -62,8 +62,19 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
         checkinService.getHistory(1, 100) // Fetch last 100 checkins
       ])
 
-      setProjects(projectsData.map(mapApiProjectToMobile))
-      setCheckins(checkinsData.items.map(mapApiCheckinToMobile))
+      if (Array.isArray(projectsData)) {
+        setProjects(projectsData.map(mapApiProjectToMobile))
+      } else {
+        console.error('Invalid projects data format:', projectsData)
+        setProjects([])
+      }
+
+      if (checkinsData && Array.isArray(checkinsData.items)) {
+        setCheckins(checkinsData.items.map(mapApiCheckinToMobile))
+      } else {
+        console.error('Invalid checkins data format:', checkinsData)
+        setCheckins([])
+      }
     } catch (error) {
       console.error('Error fetching data:', error)
       toast.error('Erro ao carregar dados')
