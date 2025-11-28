@@ -16,6 +16,7 @@ from app.core.security import (
     hash_password,
     verify_token
 )
+from app.core.logging import get_logger
 from app.models.user import User
 from app.schemas.auth import (
     LoginRequest,
@@ -30,6 +31,7 @@ from app.core.exceptions import invalid_credentials
 
 router = APIRouter()
 security = HTTPBearer()
+logger = get_logger(__name__)
 
 
 @router.post("/login", response_model=TokenResponse)
@@ -39,7 +41,11 @@ async def login(
 ) -> Any:
     """
     Login endpoint - authenticate user and return JWT token.
+    
+    Security: Uses structured logging without exposing sensitive data.
     """
+    logger.info("login_attempt", email=login_data.email)
+    
     # Find user by email
     user = db.query(User).filter(
         User.email == login_data.email,
@@ -48,7 +54,12 @@ async def login(
     ).first()
     
     # Verify user exists and password is correct
-    if not user or not verify_password(login_data.password, user.hashed_password):
+    if not user:
+        logger.warning("login_failed_user_not_found", email=login_data.email)
+        raise invalid_credentials()
+        
+    if not verify_password(login_data.password, user.hashed_password):
+        logger.warning("login_failed_invalid_password", email=login_data.email, user_id=user.id)
         raise invalid_credentials()
     
     # Create access and refresh tokens
@@ -61,6 +72,8 @@ async def login(
     refresh_token = create_refresh_token(
         data={"sub": str(user.id), "email": user.email}
     )
+    
+    logger.info("login_success", user_id=user.id, email=user.email, role=user.role.value)
     
     return TokenResponse(
         access_token=access_token,

@@ -36,10 +36,10 @@ class User(Base):
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     deleted_at = Column(DateTime(timezone=True))  # For soft delete
     
-    # Relationships (commented out temporarily to avoid circular dependencies)
-    # projetos = relationship("Project", back_populates="responsavel")
-    # checkins = relationship("Checkin", back_populates="usuario")
-    # audit_logs = relationship("AuditLog", back_populates="usuario")
+    # Relationships
+    projetos = relationship("Project", back_populates="responsavel")
+    checkins = relationship("Checkin", back_populates="usuario")
+    audit_logs = relationship("AuditLog", back_populates="usuario")
     
     def __repr__(self):
         return f"<User(id={self.id}, email='{self.email}', role='{self.role}')>"

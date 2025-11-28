@@ -87,6 +87,8 @@ npm run dev
 
 ### 💻 Opção 2: Setup Local
 
+> **📝 Nota:** Para um guia detalhado passo a passo específico para Windows e execução sem Docker, consulte o arquivo [LOCAL_SETUP.md](./LOCAL_SETUP.md).
+
 #### Backend
 ```bash
 cd backend

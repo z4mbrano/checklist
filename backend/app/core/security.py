@@ -9,24 +9,29 @@ from fastapi import HTTPException, status
 from app.core.config import settings
 
 # Password context for hashing
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
+# pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+import bcrypt
 
 def hash_password(password: str) -> str:
     """Hash a password using bcrypt."""
-    return pwd_context.hash(password)
+    # return pwd_context.hash(password)
+    salt = bcrypt.gensalt()
+    return bcrypt.hashpw(password.encode('utf-8'), salt).decode('utf-8')
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """Verify a password against its hash."""
-    # Try bcrypt first
+    """
+    Verify a password against its bcrypt hash.
+    
+    Security Note: No fallback to weaker algorithms (CWE-327 mitigation).
+    If verification fails, returns False instead of falling back to SHA256.
+    """
     try:
-        return pwd_context.verify(plain_password, hashed_password)
-    except:
-        # Fallback to simple SHA256 for testing
-        import hashlib
-        simple_hash = hashlib.sha256(plain_password.encode()).hexdigest()
-        return simple_hash == hashed_password
+        return bcrypt.checkpw(plain_password.encode('utf-8'), hashed_password.encode('utf-8'))
+    except Exception:
+        # Log error but NEVER fallback to weaker cryptography
+        # Returning False ensures authentication fails safely
+        return False
 
 
 def create_access_token(data: Dict[str, Any], expires_delta: Optional[timedelta] = None) -> str:

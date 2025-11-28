@@ -6,8 +6,17 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 import os
+
 from app.core.config import settings
 from app.api.v1.router import api_router
+from app.core.middleware import RequestIDMiddleware
+from app.core.logging import get_logger
+
+# Import all models to ensure SQLAlchemy relationships are resolved
+from app.db import base  # noqa: F401
+
+# Initialize structured logger
+logger = get_logger(__name__)
 
 # Create FastAPI application
 app = FastAPI(
@@ -25,6 +34,9 @@ allowed_origins = settings.allowed_origins
 # In development, allow all origins for easier testing
 if settings.environment == "development":
     allowed_origins = ["*"]
+
+# Add Request ID middleware FIRST (before CORS) for proper header propagation
+app.add_middleware(RequestIDMiddleware)
 
 app.add_middleware(
     CORSMiddleware,
@@ -70,7 +82,8 @@ else:
 
 @app.get("/health")
 async def health_check():
-    """Health check endpoint."""
+    """Health check endpoint with structured logging."""
+    logger.info("health_check_requested", status="healthy", version=settings.version)
     return {"status": "healthy", "version": settings.version}
 
 
