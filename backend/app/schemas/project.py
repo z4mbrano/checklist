@@ -1,5 +1,4 @@
-"""
-Project DTOs/Schemas
+"""Project DTOs/Schemas
 
 Data Transfer Objects for API input/output.
 These schemas define the contract between API and clients.
@@ -15,6 +14,7 @@ from pydantic import BaseModel, Field, field_validator
 
 # Import domain enum for consistency
 from app.domain.entities.project import ProjectStatus
+from app.schemas.client import ClientResponse
 
 
 class ProjectCreateRequest(BaseModel):
@@ -27,13 +27,13 @@ class ProjectCreateRequest(BaseModel):
     - Client ID: Required positive integer
     """
     name: str = Field(..., min_length=1, max_length=200, description="Project name")
-    description: Optional[str] = Field(None, max_length=5000, description="Project description")
+    description: Optional[str] = Field(default=None, max_length=5000, description="Project description")
     start_date: date = Field(..., description="Project start date")
-    end_date_planned: Optional[date] = Field(None, description="Planned completion date")
+    end_date_planned: Optional[date] = Field(default=None, description="Planned completion date")
     client_id: int = Field(..., gt=0, description="Client ID who owns this project")
     responsible_user_id: int = Field(..., gt=0, description="User responsible for this project")
-    estimated_value: Optional[str] = Field(None, max_length=20, description="Estimated project value")
-    observations: Optional[str] = Field(None, max_length=5000, description="Additional notes")
+    estimated_value: Optional[str] = Field(default=None, max_length=20, description="Estimated project value")
+    observations: Optional[str] = Field(default=None, max_length=5000, description="Additional notes")
     
     @field_validator('name')
     @classmethod
@@ -42,6 +42,27 @@ class ProjectCreateRequest(BaseModel):
         if not v.strip():
             raise ValueError('Project name cannot be empty or whitespace')
         return v.strip()
+    
+    @field_validator('start_date', mode='before')
+    @classmethod
+    def parse_start_date(cls, v):
+        """Parse date from string if needed."""
+        if isinstance(v, str):
+            if not v or v.strip() == '':
+                from datetime import date as date_class
+                return date_class.today()
+            return date.fromisoformat(v)
+        return v
+    
+    @field_validator('end_date_planned', mode='before')
+    @classmethod
+    def parse_end_date(cls, v):
+        """Parse optional date from string if needed."""
+        if v is None or (isinstance(v, str) and v.strip() == ''):
+            return None
+        if isinstance(v, str):
+            return date.fromisoformat(v)
+        return v
 
 
 class ProjectUpdateRequest(BaseModel):
@@ -78,16 +99,23 @@ class ProjectResponse(BaseModel):
     Includes all project details for client consumption.
     """
     id: int
-    name: str
-    description: Optional[str] = None
-    start_date: date
-    end_date_planned: Optional[date] = None
-    end_date_actual: Optional[date] = None
+    name: str = Field(..., validation_alias="nome")
+    description: Optional[str] = Field(None, validation_alias="descricao")
+    start_date: date = Field(..., validation_alias="data_inicio")
+    end_date_planned: Optional[date] = Field(None, validation_alias="data_fim_prevista")
+    end_date_actual: Optional[date] = Field(None, validation_alias="data_fim_real")
     status: ProjectStatus
-    client_id: int
-    responsible_user_id: int
-    estimated_value: Optional[str] = None
-    observations: Optional[str] = None
+    client_id: int = Field(..., validation_alias="cliente_id")
+    responsible_user_id: int = Field(..., validation_alias="responsavel_id")
+    estimated_value: Optional[str] = Field(None, validation_alias="valor_estimado")
+    observations: Optional[str] = Field(None, validation_alias="observacoes")
+
+    # Nested relations
+    client: Optional[ClientResponse] = Field(
+        default=None,
+        validation_alias="cliente",
+        serialization_alias="client"
+    )
     
     # Computed fields
     is_active: bool = Field(description="True if project is currently active")
@@ -98,8 +126,10 @@ class ProjectResponse(BaseModel):
     created_at: datetime
     updated_at: Optional[datetime] = None
     
-    class Config:
-        from_attributes = True  # Allow creation from domain entities
+    model_config = {
+        "from_attributes": True,
+        "populate_by_name": True
+    }
     
     @classmethod
     def from_domain(cls, project: 'Project') -> 'ProjectResponse':

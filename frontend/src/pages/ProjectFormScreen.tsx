@@ -55,7 +55,7 @@ export const ProjectFormScreen = ({
     return Object.keys(newErrors).length === 0
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
     if (!validateForm()) {
@@ -74,11 +74,15 @@ export const ProjectFormScreen = ({
             endDate: formData.endDate,
             observations: formData.observations
         }
-        addProject(newProject)
-        if (onProjectSaved) {
-            onProjectSaved(newProject)
-        } else {
-            onNavigate('selectProject')
+        
+        const createdProject = await addProject(newProject)
+        
+        if (createdProject) {
+            if (onProjectSaved) {
+                onProjectSaved(createdProject)
+            } else {
+                onNavigate('selectProject')
+            }
         }
     } else {
         if (initialData && initialData.id) {

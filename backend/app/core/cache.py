@@ -71,7 +71,8 @@ class CacheService:
         """Establish Redis connection (lazy initialization)."""
         if self._client is None:
             try:
-                self._client = await redis.from_url(
+                # redis.from_url is synchronous in redis-py 5.x
+                self._client = redis.from_url(
                     self.redis_url,
                     encoding="utf-8",
                     decode_responses=True,
@@ -81,8 +82,9 @@ class CacheService:
                 await self._client.ping()
                 logger.info("redis_connected", namespace=self.namespace)
             except Exception as e:
-                logger.error("redis_connection_failed", error=str(e), exc_info=True)
-                raise
+                # Log error but don't crash - operate in no-cache mode
+                logger.warning("redis_connection_failed_operating_without_cache", error=str(e))
+                self._client = None
     
     async def disconnect(self):
         """Close Redis connection gracefully."""
@@ -107,6 +109,9 @@ class CacheService:
         """
         try:
             await self.connect()
+            if self._client is None:
+                return None
+
             namespaced_key = self._make_key(key)
             value = await self._client.get(namespaced_key)
             
@@ -143,6 +148,9 @@ class CacheService:
         """
         try:
             await self.connect()
+            if self._client is None:
+                return False
+
             namespaced_key = self._make_key(key)
             expiration = ttl if ttl is not None else self.default_ttl
             
@@ -175,6 +183,9 @@ class CacheService:
         """
         try:
             await self.connect()
+            if self._client is None:
+                return False
+
             namespaced_key = self._make_key(key)
             result = await self._client.delete(namespaced_key)
             
@@ -199,6 +210,9 @@ class CacheService:
         """
         try:
             await self.connect()
+            if self._client is None:
+                return 0
+
             namespaced_pattern = self._make_key(pattern)
             
             # Find matching keys
@@ -223,6 +237,9 @@ class CacheService:
         """Check if key exists in cache."""
         try:
             await self.connect()
+            if self._client is None:
+                return False
+
             namespaced_key = self._make_key(key)
             return await self._client.exists(namespaced_key) > 0
         except Exception as e:
@@ -233,6 +250,9 @@ class CacheService:
         """Get remaining TTL for key in seconds."""
         try:
             await self.connect()
+            if self._client is None:
+                return None
+
             namespaced_key = self._make_key(key)
             ttl = await self._client.ttl(namespaced_key)
             return ttl if ttl > 0 else None

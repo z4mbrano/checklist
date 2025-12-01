@@ -152,7 +152,8 @@ class SQLAlchemyProjectRepository(IProjectRepository):
                 # CREATE: New project
                 orm_project = self._to_orm(project)
                 self.session.add(orm_project)
-                self.session.flush()  # Get ID without committing transaction
+                self.session.commit()  # Commit transaction
+                self.session.refresh(orm_project) # Refresh to get generated ID and defaults
                 
                 logger.info("project_created", project_id=orm_project.id, name=project.name)
                 
@@ -169,7 +170,8 @@ class SQLAlchemyProjectRepository(IProjectRepository):
                     raise ProjectNotFoundError(project.id)
                 
                 self._update_orm(orm_project, project)
-                self.session.flush()
+                self.session.commit() # Commit transaction
+                self.session.refresh(orm_project)
                 
                 logger.info("project_updated", project_id=project.id, name=project.name)
                 

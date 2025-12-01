@@ -166,6 +166,12 @@ class CheckinService {
     })
     return response.data
   }
+
+  // Criar check-in completo (fluxo offline/mobile)
+  async createFull(data: any): Promise<Checkin> {
+    const response = await api.post('/checkins/full', data)
+    return response.data
+  }
 }
 
 // Export service instances

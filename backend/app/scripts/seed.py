@@ -29,38 +29,52 @@ def seed_users(db: Session):
     """Seed initial users."""
     print("Seeding users...")
     
-    # Create admin user
-    admin = db.query(User).filter(User.email == "admin@vrd.com").first()
-    if not admin:
-        admin = User(
-            name="Administrador",
-            email="admin@vrd.com",
-            hashed_password=hash_password("admin123"),
-            role=UserRole.ADMIN
-        )
-        db.add(admin)
-    
-    # Create supervisor
-    supervisor = db.query(User).filter(User.email == "supervisor@vrd.com").first()
-    if not supervisor:
-        supervisor = User(
-            name="João Supervisor",
-            email="supervisor@vrd.com",
-            hashed_password=hash_password("supervisor123"),
-            role=UserRole.SUPERVISOR
-        )
-        db.add(supervisor)
-    
-    # Create technicians
-    tecnico1 = db.query(User).filter(User.email == "tecnico@vrd.com").first()
-    if not tecnico1:
-        tecnico1 = User(
-            name="João Silva",
-            email="tecnico@vrd.com",
-            hashed_password=hash_password("tecnico123"),
-            role=UserRole.TECNICO
-        )
-        db.add(tecnico1)
+    users_data = [
+        # Admin
+        {
+            "name": "Administrador",
+            "email": "admin@vrdsolution.com",
+            "password": "Admin@123",
+            "role": UserRole.ADMIN
+        },
+        # Supervisor
+        {
+            "name": "João Supervisor",
+            "email": "supervisor@vrdsolution.com",
+            "password": "Supervisor@123",
+            "role": UserRole.SUPERVISOR
+        },
+        # Técnicos
+        {
+            "name": "Arthur Técnico",
+            "email": "arthur@vrdsolution.com",
+            "password": "Arthur@123",
+            "role": UserRole.TECNICO
+        },
+        {
+            "name": "Diego Técnico",
+            "email": "diego@vrdsolution.com",
+            "password": "Diego@123",
+            "role": UserRole.TECNICO
+        },
+        {
+            "name": "Guilherme Técnico",
+            "email": "gui@vrdsolution.com",
+            "password": "Gui@123",
+            "role": UserRole.TECNICO
+        }
+    ]
+
+    for user_data in users_data:
+        user = db.query(User).filter(User.email == user_data["email"]).first()
+        if not user:
+            user = User(
+                name=user_data["name"],
+                email=user_data["email"],
+                hashed_password=hash_password(user_data["password"]),
+                role=user_data["role"]
+            )
+            db.add(user)
     
     db.commit()
     print("✅ Users seeded successfully!")

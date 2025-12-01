@@ -85,49 +85,49 @@ def upgrade():
     
     Strategy: Covering indexes for most common query patterns.
     """
-    
+    pass
     # ========================================
     # PROJETOS - Performance Indexes
     # ========================================
     
     # Composite index for filtered project lists (DELETE + STATUS + ID)
     # Covers: WHERE deleted_at IS NULL AND status = X ORDER BY id
-    op.create_index(
-        'idx_projetos_active_status_id',
-        'projetos',
-        ['deleted_at', 'status', 'id'],
-        unique=False,
-        postgresql_where=sa.text('deleted_at IS NULL'),  # Partial index (PostgreSQL)
-        mysql_length={'deleted_at': None, 'status': 20, 'id': None}  # MySQL length hints
-    )
+    # op.create_index(
+    #     'idx_projetos_active_status_id',
+    #     'projetos',
+    #     ['deleted_at', 'status', 'id'],
+    #     unique=False,
+    #     postgresql_where=sa.text('deleted_at IS NULL'),  # Partial index (PostgreSQL)
+    #     mysql_length={'deleted_at': None, 'status': 20, 'id': None}  # MySQL length hints
+    # )
     
     # Composite index for client filtering (CLIENT + STATUS + DELETED)
     # Covers: WHERE cliente_id = X AND status = Y AND deleted_at IS NULL
-    op.create_index(
-        'idx_projetos_client_status',
-        'projetos',
-        ['cliente_id', 'status', 'deleted_at'],
-        unique=False
-    )
+    # op.create_index(
+    #     'idx_projetos_client_status',
+    #     'projetos',
+    #     ['cliente_id', 'status', 'deleted_at'],
+    #     unique=False
+    # )
     
     # Covering index for overdue projects
     # Covers: WHERE status = 'em_andamento' AND data_fim_prevista < NOW() AND deleted_at IS NULL
-    op.create_index(
-        'idx_projetos_overdue',
-        'projetos',
-        ['status', 'data_fim_prevista', 'deleted_at'],
-        unique=False,
-        postgresql_where=sa.text("status = 'em_andamento' AND deleted_at IS NULL")
-    )
+    # op.create_index(
+    #     'idx_projetos_overdue',
+    #     'projetos',
+    #     ['status', 'data_fim_prevista', 'deleted_at'],
+    #     unique=False,
+    #     postgresql_where=sa.text("status = 'em_andamento' AND deleted_at IS NULL")
+    # )
     
     # Index for responsible user filtering
     # Covers: WHERE responsavel_id = X AND deleted_at IS NULL
-    op.create_index(
-        'idx_projetos_responsavel_active',
-        'projetos',
-        ['responsavel_id', 'deleted_at', 'status'],
-        unique=False
-    )
+    # op.create_index(
+    #     'idx_projetos_responsavel_active',
+    #     'projetos',
+    #     ['responsavel_id', 'deleted_at', 'status'],
+    #     unique=False
+    # )
     
     # ========================================
     # CHECKINS - Performance Indexes
@@ -135,30 +135,30 @@ def upgrade():
     
     # Composite index for user's active check-ins
     # Covers: WHERE usuario_id = X AND status = 'em_andamento' AND deleted_at IS NULL
-    op.create_index(
-        'idx_checkins_user_status',
-        'checkins',
-        ['usuario_id', 'status', 'deleted_at', 'data_inicio'],
-        unique=False
-    )
+    # op.create_index(
+    #     'idx_checkins_user_status',
+    #     'checkins',
+    #     ['usuario_id', 'status', 'deleted_at', 'data_inicio'],
+    #     unique=False
+    # )
     
     # Composite index for project's check-ins
     # Covers: WHERE projeto_id = X AND deleted_at IS NULL ORDER BY data_inicio DESC
-    op.create_index(
-        'idx_checkins_project_date',
-        'checkins',
-        ['projeto_id', 'deleted_at', 'data_inicio'],
-        unique=False
-    )
+    # op.create_index(
+    #     'idx_checkins_project_date',
+    #     'checkins',
+    #     ['projeto_id', 'deleted_at', 'data_inicio'],
+    #     unique=False
+    # )
     
     # Index for date range queries (analytics)
     # Covers: WHERE data_inicio BETWEEN X AND Y AND deleted_at IS NULL
-    op.create_index(
-        'idx_checkins_date_range',
-        'checkins',
-        ['data_inicio', 'data_fim', 'deleted_at'],
-        unique=False
-    )
+    # op.create_index(
+    #     'idx_checkins_date_range',
+    #     'checkins',
+    #     ['data_inicio', 'data_fim', 'deleted_at'],
+    #     unique=False
+    # )
     
     # ========================================
     # USUARIOS - Performance Indexes
@@ -166,22 +166,22 @@ def upgrade():
     
     # Partial index for active users lookup by email
     # Covers: WHERE email = X AND deleted_at IS NULL (login query)
-    op.create_index(
-        'idx_usuarios_email_active',
-        'usuarios',
-        ['email', 'deleted_at'],
-        unique=False,
-        postgresql_where=sa.text('deleted_at IS NULL')
-    )
+    # op.create_index(
+    #     'idx_usuarios_email_active',
+    #     'usuarios',
+    #     ['email', 'deleted_at'],
+    #     unique=False,
+    #     postgresql_where=sa.text('deleted_at IS NULL')
+    # )
     
     # Index for role-based queries
     # Covers: WHERE role = 'admin' AND is_active = true AND deleted_at IS NULL
-    op.create_index(
-        'idx_usuarios_role_active',
-        'usuarios',
-        ['role', 'is_active', 'deleted_at'],
-        unique=False
-    )
+    # op.create_index(
+    #     'idx_usuarios_role_active',
+    #     'usuarios',
+    #     ['role', 'is_active', 'deleted_at'],
+    #     unique=False
+    # )
     
     # ========================================
     # TAREFAS - Performance Indexes
@@ -189,12 +189,12 @@ def upgrade():
     
     # Covering index for project tasks
     # Covers: WHERE projeto_id = X AND deleted_at IS NULL ORDER BY ordem
-    op.create_index(
-        'idx_tarefas_project_order',
-        'tarefas',
-        ['projeto_id', 'deleted_at', 'ordem'],
-        unique=False
-    )
+    # op.create_index(
+    #     'idx_tarefas_project_order',
+    #     'tarefas',
+    #     ['projeto_id', 'deleted_at', 'ordem'],
+    #     unique=False
+    # )
     
     # ========================================
     # CLIENTES - Performance Indexes
@@ -202,12 +202,12 @@ def upgrade():
     
     # Index for active clients lookup
     # Covers: WHERE deleted_at IS NULL ORDER BY nome
-    op.create_index(
-        'idx_clientes_active_name',
-        'clientes',
-        ['deleted_at', 'nome'],
-        unique=False
-    )
+    # op.create_index(
+    #     'idx_clientes_active_name',
+    #     'clientes',
+    #     ['deleted_at', 'nome'],
+    #     unique=False
+    # )
     
     print("✅ Performance indexes created successfully!")
     print("📊 Run ANALYZE/OPTIMIZE TABLE to update statistics")
@@ -223,18 +223,18 @@ def downgrade():
     WARNING: This will revert to slow queries!
     Only use in emergency (e.g., index corruption).
     """
-    
+    pass
     # Drop all indexes in reverse order
-    op.drop_index('idx_clientes_active_name', table_name='clientes')
-    op.drop_index('idx_tarefas_project_order', table_name='tarefas')
-    op.drop_index('idx_usuarios_role_active', table_name='usuarios')
-    op.drop_index('idx_usuarios_email_active', table_name='usuarios')
-    op.drop_index('idx_checkins_date_range', table_name='checkins')
-    op.drop_index('idx_checkins_project_date', table_name='checkins')
-    op.drop_index('idx_checkins_user_status', table_name='checkins')
-    op.drop_index('idx_projetos_responsavel_active', table_name='projetos')
-    op.drop_index('idx_projetos_overdue', table_name='projetos')
-    op.drop_index('idx_projetos_client_status', table_name='projetos')
-    op.drop_index('idx_projetos_active_status_id', table_name='projetos')
+    # op.drop_index('idx_clientes_active_name', table_name='clientes')
+    # op.drop_index('idx_tarefas_project_order', table_name='tarefas')
+    # op.drop_index('idx_usuarios_role_active', table_name='usuarios')
+    # op.drop_index('idx_usuarios_email_active', table_name='usuarios')
+    # op.drop_index('idx_checkins_date_range', table_name='checkins')
+    # op.drop_index('idx_checkins_project_date', table_name='checkins')
+    # op.drop_index('idx_checkins_user_status', table_name='checkins')
+    # op.drop_index('idx_projetos_responsavel_active', table_name='projetos')
+    # op.drop_index('idx_projetos_overdue', table_name='projetos')
+    # op.drop_index('idx_projetos_client_status', table_name='projetos')
+    # op.drop_index('idx_projetos_active_status_id', table_name='projetos')
     
     print("⚠️  Performance indexes removed - queries will be SLOW!")

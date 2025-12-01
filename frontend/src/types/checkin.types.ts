@@ -25,11 +25,11 @@ export interface Checkin {
   activities?: string         // Atividades executadas (selecionadas)
   observations?: string       // Campo livre de observações
   description?: string        // Alias for observations
-  status: CheckinStatus
+  status: CheckinStatus | string
   created_at: string
-  updated_at: string
+  updated_at?: string
   user?: User
-  project?: Project
+  project?: { name: string } | Project
   tasks?: Task[]
   task?: Task                 // Single task reference if needed
 }

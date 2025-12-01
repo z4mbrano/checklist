@@ -11,7 +11,7 @@ interface DataContextType {
   checkins: Checkin[]
   isLoading: boolean
   refreshData: () => Promise<void>
-  addProject: (project: Project) => void // Deprecated/Mock adapter
+  addProject: (project: Project) => Promise<Project | undefined> // Returns created project with DB ID
   updateProject: (project: Project) => void // Deprecated/Mock adapter
   addCheckin: (checkin: Checkin) => void // Deprecated/Mock adapter
   updateCheckin: (checkin: Checkin) => void // Deprecated/Mock adapter
@@ -38,19 +38,25 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     observations: p.description
   })
 
-  const mapApiCheckinToMobile = (c: ApiCheckin): Checkin => ({
-    id: c.id.toString(),
-    projectId: c.project_id.toString(),
-    projectName: c.project?.name || 'Projeto',
-    arrivalTime: c.arrival_time,
-    startTime: c.start_time,
-    endTime: c.checkout_time,
-    totalHours: c.total_hours ? c.total_hours.toFixed(2) : undefined,
-    activities: c.tasks?.map(t => t.name) || [],
-    observations: c.observations,
-    date: c.created_at,
-    userEmail: c.user?.email || ''
-  })
+  const mapApiCheckinToMobile = (c: ApiCheckin): Checkin => {
+    // Robust mapping to handle potential missing fields or structure mismatches
+    const projectName = c.project?.name || 'Projeto';
+    const userEmail = c.user?.email || '';
+    
+    return {
+      id: c.id.toString(),
+      projectId: c.project_id.toString(),
+      projectName: projectName,
+      arrivalTime: c.arrival_time,
+      startTime: c.start_time || c.created_at, // Fallback to created_at if start_time is missing
+      endTime: c.checkout_time,
+      totalHours: c.total_hours ? c.total_hours.toFixed(2) : undefined,
+      activities: c.tasks?.map(t => t.name) || [],
+      observations: c.observations,
+      date: c.created_at,
+      userEmail: userEmail
+    }
+  }
 
   const refreshData = useCallback(async () => {
     if (!isAuthenticated) return
@@ -89,10 +95,30 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
 
   // Adapters for existing UI components that expect synchronous updates
   // In a real app, these should be replaced by direct API calls in the components
-  const addProject = (project: Project) => {
-    // This is a placeholder. In production, components should call projectService.create()
-    console.warn('addProject called in DataContext - should use API')
-    setProjects(prev => [...prev, project])
+  const addProject = async (project: Project): Promise<Project | undefined> => {
+    try {
+      // Map Mobile Project to API CreateProjectRequest
+      // TODO: Handle client selection properly. Using ID 1 as default.
+      const apiProject = {
+        name: project.name,
+        description: project.observations || undefined,
+        start_date: project.startDate || undefined,
+        end_date_planned: project.endDate || undefined,
+        client_id: 1, 
+        responsible_user_id: 1, // TODO: Get from auth context or selection
+        estimated_value: undefined
+      }
+      
+      const newProject = await projectService.create(apiProject)
+      const mappedProject = mapApiProjectToMobile(newProject)
+      setProjects(prev => [...prev, mappedProject])
+      toast.success('Projeto criado com sucesso!')
+      return mappedProject
+    } catch (error) {
+      console.error('Error creating project:', error)
+      toast.error('Erro ao criar projeto')
+      return undefined
+    }
   }
 
   const updateProject = (project: Project) => {
@@ -100,9 +126,25 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     setProjects(prev => prev.map(p => p.id === project.id ? project : p))
   }
 
-  const addCheckin = (checkin: Checkin) => {
-    console.warn('addCheckin called in DataContext - should use API')
-    setCheckins(prev => [checkin, ...prev])
+  const addCheckin = async (checkin: Checkin) => {
+    try {
+      // Map Mobile Checkin to API CreateFullCheckinRequest
+      const apiCheckinPayload = {
+        project_id: parseInt(checkin.projectId),
+        arrival_time: checkin.arrivalTime,
+        start_time: checkin.startTime,
+        end_time: checkin.endTime,
+        activities: checkin.activities,
+        observations: checkin.observations || checkin.otherActivities
+      }
+
+      const newCheckin = await checkinService.createFull(apiCheckinPayload)
+      setCheckins(prev => [mapApiCheckinToMobile(newCheckin), ...prev])
+      toast.success('Check-in salvo com sucesso!')
+    } catch (error) {
+      console.error('Error creating checkin:', error)
+      toast.error('Erro ao salvar check-in')
+    }
   }
 
   const updateCheckin = (checkin: Checkin) => {

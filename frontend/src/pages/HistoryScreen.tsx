@@ -1,5 +1,5 @@
 import React from 'react'
-import { ArrowLeft, Folder, ChevronRight } from 'lucide-react'
+import { ArrowLeft, Folder, ChevronRight, Plus } from 'lucide-react'
 import { Card } from '../components/ui/Card'
 import { Screen, Project } from '../types/mobile'
 import { useData } from '../contexts/DataContext'
@@ -18,15 +18,28 @@ export const HistoryScreen = ({
   const { projects, checkins } = useData()
 
   // Filter projects based on user role
+  // TODO: Re-enable filtering when API returns responsible email
+  const filteredProjects = projects; 
+  /* 
   const filteredProjects = user?.isAdmin 
     ? projects 
     : projects.filter(p => p.responsibleEmail === user?.email)
+  */
 
   return (
     <div className="p-6 max-w-5xl mx-auto">
-      <header className="flex items-center gap-4 mb-8">
-        <button onClick={() => onNavigate('dashboard')} className="p-2 hover:bg-slate-200 rounded-full"><ArrowLeft /></button>
-        <h1 className="text-xl font-bold text-slate-800">Histórico & Projetos</h1>
+      <header className="flex items-center justify-between mb-8">
+        <div className="flex items-center gap-4">
+            <button onClick={() => onNavigate('dashboard')} className="p-2 hover:bg-slate-200 rounded-full"><ArrowLeft /></button>
+            <h1 className="text-xl font-bold text-slate-800">Histórico & Projetos</h1>
+        </div>
+        <button 
+            onClick={() => onNavigate('addProject')}
+            className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+        >
+            <Plus size={20} />
+            <span className="hidden sm:inline">Novo Projeto</span>
+        </button>
       </header>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
