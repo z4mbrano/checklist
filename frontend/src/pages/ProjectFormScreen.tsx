@@ -62,30 +62,47 @@ export const ProjectFormScreen = ({
   }
 
   const handleClientSearch = async (query: string) => {
+    console.log('[CLIENT SEARCH] Starting search with query:', query)
     try {
       const clients = await clientService.search(query)
-      return clients.map(c => ({
-        id: c.id,
-        label: c.name,
-        subLabel: c.document
-      }))
+      console.log('[CLIENT SEARCH] Raw API response:', clients)
+      console.log('[CLIENT SEARCH] Response length:', clients?.length)
+      
+      const mapped = clients.map((c: any) => {
+        console.log('[CLIENT SEARCH] Mapping client:', c)
+        return {
+          id: c.id,
+          label: c.name || 'Sem nome',
+          subLabel: ''
+        }
+      })
+      console.log('[CLIENT SEARCH] Final mapped options:', mapped)
+      return mapped
     } catch (error) {
-      console.error('Error searching clients:', error)
+      console.error('[CLIENT SEARCH] Error searching clients:', error)
       return []
     }
   }
 
   const handleUserSearch = async (query: string) => {
+    console.log('[USER SEARCH] Starting search with query:', query)
     try {
       const users = await userService.search(query)
-      return users.map(u => ({
-        id: u.id,
-        label: u.name,
-        subLabel: u.email,
-        original: u
-      }))
+      console.log('[USER SEARCH] Raw API response:', users)
+      console.log('[USER SEARCH] Response length:', users?.length)
+      
+      const mapped = users.map((u: any) => {
+        console.log('[USER SEARCH] Mapping user:', u)
+        return {
+          id: u.id,
+          label: u.name || 'Sem nome',
+          subLabel: ''
+        }
+      })
+      console.log('[USER SEARCH] Final mapped options:', mapped)
+      return mapped
     } catch (error) {
-      console.error('Error searching users:', error)
+      console.error('[USER SEARCH] Error searching users:', error)
       return []
     }
   }

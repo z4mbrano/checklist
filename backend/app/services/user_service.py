@@ -6,5 +6,5 @@ class UserService:
     def __init__(self, repository: SQLAlchemyUserRepository):
         self.repository = repository
 
-    def search_users(self, query: str) -> List[User]:
-        return self.repository.search(query)
+    def search_users(self, query: str, limit: int = 10) -> List[User]:
+        return self.repository.search(query, limit)

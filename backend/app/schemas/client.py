@@ -32,3 +32,8 @@ class ClientResponse(ClientBase):
     id: int
     created_at: datetime
     updated_at: Optional[datetime] = None
+
+    class Config:
+        populate_by_name = True
+        from_attributes = True
+        json_schema_extra = {"by_alias": True}

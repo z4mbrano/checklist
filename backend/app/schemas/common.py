@@ -1,7 +1,7 @@
 """
 Common schemas used across the application
 """
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from typing import Optional, List, Any
 from datetime import datetime
 
@@ -60,3 +60,17 @@ class ErrorResponse(BaseModel):
     detail: str
     error_code: Optional[str] = None
     timestamp: datetime = Field(default_factory=datetime.utcnow)
+
+
+class SearchItemResponse(BaseModel):
+    """
+    Minimal DTO for autocomplete/search results.
+    Always returns id and name in a consistent format.
+    """
+    id: int
+    name: str
+    
+    model_config = ConfigDict(
+        from_attributes=True,
+        populate_by_name=True
+    )

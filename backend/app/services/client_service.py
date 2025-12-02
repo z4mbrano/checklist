@@ -10,8 +10,8 @@ class ClientService:
     def create_client(self, client_data: ClientCreate) -> Client:
         return self.repository.create(client_data)
 
-    def search_clients(self, query: str) -> List[Client]:
-        return self.repository.search(query)
+    def search_clients(self, query: str, limit: int = 10) -> List[Client]:
+        return self.repository.search(query, limit)
 
     def get_all_clients(self, skip: int = 0, limit: int = 100) -> List[Client]:
         return self.repository.get_all(skip, limit)

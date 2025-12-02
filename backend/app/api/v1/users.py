@@ -2,24 +2,34 @@
 User management endpoints
 """
 from typing import List
+import logging
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 from app.db.session import get_db
 from app.schemas.user import UserResponse
+from app.schemas.common import SearchItemResponse
 from app.services.user_service import UserService
 from app.infrastructure.repositories.sqlalchemy_user_repository import SQLAlchemyUserRepository
 from app.api.deps import get_current_active_user
 
+logger = logging.getLogger(__name__)
 router = APIRouter()
 
 def get_user_service(db: Session = Depends(get_db)) -> UserService:
     repository = SQLAlchemyUserRepository(db)
     return UserService(repository)
 
-@router.get("/search", response_model=List[UserResponse])
+@router.get("/search", response_model=List[SearchItemResponse])
 def search_users(
     q: str = Query(..., min_length=1),
+    limit: int = Query(10, ge=1, le=50),
     service: UserService = Depends(get_user_service),
     current_user = Depends(get_current_active_user)
 ):
-    return service.search_users(q)
+    logger.info(f"[USER SEARCH] Query: '{q}', Limit: {limit}")
+    users = service.search_users(q, limit)
+    logger.info(f"[USER SEARCH] Found {len(users)} users from DB")
+    
+    result = [SearchItemResponse(id=u.id, name=u.name) for u in users]
+    logger.info(f"[USER SEARCH] Returning: {[r.model_dump() for r in result]}")
+    return result

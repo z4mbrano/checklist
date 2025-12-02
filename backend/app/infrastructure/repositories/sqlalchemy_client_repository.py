@@ -39,6 +39,7 @@ class SQLAlchemyClientRepository:
                 )
             )
             .filter(Client.deleted_at.is_(None))
+            .order_by(Client.nome.asc())
             .limit(limit)
             .all()
         )

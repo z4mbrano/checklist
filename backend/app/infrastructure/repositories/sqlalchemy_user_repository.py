@@ -17,6 +17,7 @@ class SQLAlchemyUserRepository:
                 )
             )
             .filter(User.deleted_at.is_(None))
+            .order_by(User.name.asc())
             .limit(limit)
             .all()
         )

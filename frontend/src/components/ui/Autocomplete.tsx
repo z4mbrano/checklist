@@ -34,7 +34,7 @@ export const Autocomplete = ({
   useEffect(() => {
     if (initialValue) {
       setSelected(initialValue)
-      setQuery(initialValue.label)
+      setQuery(initialValue.label && initialValue.label.trim() ? initialValue.label : String(initialValue.id))
     }
   }, [initialValue])
 
@@ -73,7 +73,8 @@ export const Autocomplete = ({
 
   const handleSelect = (option: Option) => {
     setSelected(option)
-    setQuery(option.label)
+    const display = option.label && option.label.trim() ? option.label : String(option.id)
+    setQuery(display)
     setIsOpen(false)
     onSelect(option)
   }
@@ -120,20 +121,24 @@ export const Autocomplete = ({
 
       {isOpen && options.length > 0 && (
         <div className="absolute z-10 mt-1 w-full bg-white shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm">
-          {options.map((option) => (
-            <div
-              key={option.id}
-              className="cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-blue-50 text-slate-900"
-              onClick={() => handleSelect(option)}
-            >
-              <div className="flex flex-col">
-                <span className="font-medium truncate">{option.label}</span>
-                {option.subLabel && (
-                  <span className="text-xs text-slate-500 truncate">{option.subLabel}</span>
-                )}
+          {options.map((option) => {
+            const primary = option.label && option.label.trim() ? option.label : String(option.id)
+            const secondary = option.subLabel && option.subLabel.trim() ? option.subLabel : ''
+            return (
+              <div
+                key={option.id}
+                className="cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-blue-50 text-slate-900"
+                onClick={() => handleSelect(option)}
+              >
+                <div className="flex flex-col">
+                  <span className="font-medium truncate">{primary || 'Sem nome'}</span>
+                  {secondary ? (
+                    <span className="text-xs text-slate-500 truncate">{secondary}</span>
+                  ) : null}
+                </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       )}
       
