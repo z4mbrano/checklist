@@ -8,7 +8,9 @@ export interface Project {
   id: string
   name: string
   client: string
+  clientId?: number
   responsible: string
+  responsibleId?: number
   responsibleEmail: string
   startDate: string
   endDate?: string

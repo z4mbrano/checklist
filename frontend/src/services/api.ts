@@ -113,6 +113,23 @@ class ClientService {
     const response = await api.get(`/clients/${id}`)
     return response.data
   }
+
+  async search(query: string): Promise<Client[]> {
+    const response = await api.get('/clients/search', { params: { q: query } })
+    return response.data.map((c: any) => ({ id: c.id, label: c.name, subLabel: c.cnpj }))
+  }
+
+  async create(data: any): Promise<Client> {
+    const response = await api.post('/clients/', data)
+    return response.data
+  }
+}
+
+class UserService {
+  async search(query: string): Promise<{ id: number, label: string, subLabel: string }[]> {
+    const response = await api.get('/users/search', { params: { q: query } })
+    return response.data.map((u: any) => ({ id: u.id, label: u.name, subLabel: u.email }))
+  }
 }
 
 class TaskService {
@@ -177,5 +194,6 @@ class CheckinService {
 // Export service instances
 export const projectService = new ProjectService()
 export const clientService = new ClientService()
+export const userService = new UserService()
 export const taskService = new TaskService()
 export const checkinService = new CheckinService()

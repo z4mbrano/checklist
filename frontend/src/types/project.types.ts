@@ -38,6 +38,7 @@ export interface CreateProjectRequest {
   name: string
   description?: string
   client_id: number
+  responsible_user_id: number
   start_date?: string
   end_date?: string
   status?: ProjectStatus | string

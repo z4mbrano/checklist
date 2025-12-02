@@ -98,14 +98,13 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
   const addProject = async (project: Project): Promise<Project | undefined> => {
     try {
       // Map Mobile Project to API CreateProjectRequest
-      // TODO: Handle client selection properly. Using ID 1 as default.
       const apiProject = {
         name: project.name,
         description: project.observations || undefined,
         start_date: project.startDate || undefined,
         end_date_planned: project.endDate || undefined,
-        client_id: 1, 
-        responsible_user_id: 1, // TODO: Get from auth context or selection
+        client_id: project.clientId || 1, 
+        responsible_user_id: project.responsibleId || 1,
         estimated_value: undefined
       }
       

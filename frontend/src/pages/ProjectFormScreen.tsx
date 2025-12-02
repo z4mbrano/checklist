@@ -1,11 +1,14 @@
 import React, { useState } from 'react'
-import { ArrowLeft, AlertCircle } from 'lucide-react'
+import { ArrowLeft, AlertCircle, Plus } from 'lucide-react'
 import { Card } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
 import { Select } from '../components/ui/Select'
+import { Autocomplete } from '../components/ui/Autocomplete'
+import { ClientFormModal } from '../components/modals/ClientFormModal'
 import { Screen, Project } from '../types/mobile'
 import { useData } from '../contexts/DataContext'
+import { clientService, userService } from '../services/api'
 
 interface ProjectFormScreenProps {
   onNavigate: (screen: Screen) => void
@@ -21,12 +24,15 @@ export const ProjectFormScreen = ({
   mode = 'add'
 }: ProjectFormScreenProps) => {
   const { addProject, updateProject } = useData()
+  const [isClientModalOpen, setIsClientModalOpen] = useState(false)
   
   const [formData, setFormData] = useState<Partial<Project>>(
     initialData || {
       name: '',
       client: '',
+      clientId: undefined,
       responsible: '',
+      responsibleId: undefined,
       responsibleEmail: '',
       startDate: '',
       endDate: '',
@@ -55,6 +61,35 @@ export const ProjectFormScreen = ({
     return Object.keys(newErrors).length === 0
   }
 
+  const handleClientSearch = async (query: string) => {
+    try {
+      const clients = await clientService.search(query)
+      return clients.map(c => ({
+        id: c.id,
+        label: c.name,
+        subLabel: c.document
+      }))
+    } catch (error) {
+      console.error('Error searching clients:', error)
+      return []
+    }
+  }
+
+  const handleUserSearch = async (query: string) => {
+    try {
+      const users = await userService.search(query)
+      return users.map(u => ({
+        id: u.id,
+        label: u.name,
+        subLabel: u.email,
+        original: u
+      }))
+    } catch (error) {
+      console.error('Error searching users:', error)
+      return []
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
@@ -67,7 +102,9 @@ export const ProjectFormScreen = ({
             id: Date.now().toString(),
             name: formData.name!,
             client: formData.client!,
+            clientId: formData.clientId,
             responsible: formData.responsible || 'Técnico',
+            responsibleId: formData.responsibleId,
             responsibleEmail: formData.responsibleEmail!,
             startDate: formData.startDate || new Date().toISOString().split('T')[0],
             status: formData.status || 'Em Andamento',
@@ -125,13 +162,31 @@ export const ProjectFormScreen = ({
           </div>
 
           <div>
-            <Input 
-              label="Cliente *" 
-              placeholder="Nome do Cliente" 
-              value={formData.client || ''} 
-              onChange={(e) => setFormData({...formData, client: e.target.value})}
-              required
-            />
+            <div className="flex items-end gap-2">
+              <div className="flex-1">
+                <Autocomplete
+                  label="Cliente *"
+                  placeholder="Buscar cliente..."
+                  onSearch={handleClientSearch}
+                  onSelect={(option) => {
+                    setFormData({
+                      ...formData,
+                      client: option.label,
+                      clientId: Number(option.id)
+                    })
+                  }}
+                  initialValue={formData.client ? { id: formData.clientId || 0, label: formData.client } : null}
+                />
+              </div>
+              <Button 
+                type="button" 
+                variant="outline" 
+                className="mb-[2px]"
+                onClick={() => setIsClientModalOpen(true)}
+              >
+                <Plus size={20} />
+              </Button>
+            </div>
             {errors.client && (
               <p className="text-sm text-red-600 mt-1 flex items-center gap-1">
                 <AlertCircle size={14} />
@@ -140,12 +195,22 @@ export const ProjectFormScreen = ({
             )}
           </div>
 
-          <Input 
-            label="Responsável" 
-            placeholder="Nome do Técnico" 
-            value={formData.responsible || ''} 
-            onChange={(e) => setFormData({...formData, responsible: e.target.value})}
-          />
+          <div>
+            <Autocomplete
+              label="Responsável"
+              placeholder="Buscar técnico..."
+              onSearch={handleUserSearch}
+              onSelect={(option: any) => {
+                setFormData({
+                  ...formData,
+                  responsible: option.label,
+                  responsibleId: Number(option.id),
+                  responsibleEmail: option.subLabel
+                })
+              }}
+              initialValue={formData.responsible ? { id: formData.responsibleId || 0, label: formData.responsible } : null}
+            />
+          </div>
 
           <div>
             <Input 
@@ -155,6 +220,7 @@ export const ProjectFormScreen = ({
               value={formData.responsibleEmail || ''} 
               onChange={(e) => setFormData({...formData, responsibleEmail: e.target.value})}
               required
+              readOnly
             />
             {errors.responsibleEmail && (
               <p className="text-sm text-red-600 mt-1 flex items-center gap-1">
@@ -207,6 +273,19 @@ export const ProjectFormScreen = ({
           </div>
         </form>
       </Card>
+
+      <ClientFormModal 
+        isOpen={isClientModalOpen}
+        onClose={() => setIsClientModalOpen(false)}
+        onSuccess={(client) => {
+          setFormData({
+            ...formData,
+            client: client.name,
+            clientId: client.id
+          })
+          setIsClientModalOpen(false)
+        }}
+      />
     </div>
   )
 }
