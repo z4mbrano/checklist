@@ -29,8 +29,8 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     id: p.id.toString(),
     name: p.name,
     client: p.client?.name || 'Cliente Desconhecido',
-    responsible: 'Técnico', // API doesn't have this yet
-    responsibleEmail: '', // API doesn't have this yet
+    responsible: p.responsible_user?.name || 'Técnico',
+    responsibleEmail: p.responsible_user?.email || '',
     startDate: p.start_date || '',
     endDate: p.end_date,
     status: p.status === ProjectStatus.COMPLETED ? 'Concluído' : 

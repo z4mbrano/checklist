@@ -114,7 +114,8 @@ export const ProjectDetailScreen = ({
           <button onClick={() => onNavigate('history')} className="p-2 hover:bg-slate-200 rounded-full no-print"><ArrowLeft /></button>
           <div>
             <h1 className="text-xl font-bold text-slate-800">{selectedProject.name}</h1>
-            <p className="text-sm text-slate-500">Histórico de Apontamentos</p>
+            <p className="text-sm text-slate-500">Cliente: {selectedProject.client}</p>
+            <p className="text-sm text-slate-500">Responsável: {selectedProject.responsible}</p>
           </div>
         </div>
         <div className="flex gap-2 no-print">

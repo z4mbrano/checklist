@@ -1,4 +1,5 @@
 import { Client } from './client.types'
+import { User } from './auth.types'
 
 export enum ProjectStatus {
   ACTIVE = 'active',
@@ -17,6 +18,7 @@ export interface Project {
   created_at: string
   updated_at: string
   client?: Client
+  responsible_user?: User
 }
 
 export interface Task {

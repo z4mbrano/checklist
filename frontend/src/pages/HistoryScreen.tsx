@@ -58,7 +58,8 @@ export const HistoryScreen = ({
               </span>
             </div>
             <h3 className="font-bold text-slate-800 mb-1">{p.name}</h3>
-            <p className="text-sm text-slate-500 mb-4">{p.client}</p>
+            <p className="text-sm text-slate-500 mb-1">{p.client}</p>
+            <p className="text-xs text-slate-400 mb-4">Responsável: {p.responsible}</p>
             <div className="pt-4 border-t border-slate-100 flex justify-between items-center text-sm text-slate-500">
               <span>{checkins.filter(c => c.projectId === p.id).length} check-ins</span>
               <ChevronRight size={16} className="group-hover:translate-x-1 transition-transform" />

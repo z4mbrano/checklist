@@ -15,6 +15,7 @@ from pydantic import BaseModel, Field, field_validator
 # Import domain enum for consistency
 from app.domain.entities.project import ProjectStatus
 from app.schemas.client import ClientResponse
+from app.schemas.user import UserResponse
 
 
 class ProjectCreateRequest(BaseModel):
@@ -115,6 +116,11 @@ class ProjectResponse(BaseModel):
         default=None,
         validation_alias="cliente",
         serialization_alias="client"
+    )
+    responsible_user: Optional[UserResponse] = Field(
+        default=None,
+        validation_alias="responsavel",
+        serialization_alias="responsible_user"
     )
     
     # Computed fields
