@@ -1,10 +1,10 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react'
 import { Project, Checkin } from '../types/mobile'
 import { projectService, checkinService } from '../services/api'
-import { Project as ApiProject, ProjectStatus } from '../types/project.types'
-import { Checkin as ApiCheckin } from '../types/checkin.types'
+import { ProjectMapper, CheckinMapper } from '../mappers/dataMappers'
 import { useAuth } from './AuthContext'
 import { toast } from 'react-hot-toast'
+import { logger } from '../utils/logger'
 
 interface DataContextType {
   projects: Project[]
@@ -26,39 +26,6 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
   const [checkins, setCheckins] = useState<Checkin[]>([])
   const [isLoading, setIsLoading] = useState(false)
 
-  const mapApiProjectToMobile = (p: ApiProject): Project => ({
-    id: p.id.toString(),
-    name: p.name,
-    client: p.client?.name || 'Cliente Desconhecido',
-    responsible: p.responsible_user?.name || 'Técnico',
-    responsibleEmail: p.responsible_user?.email || '',
-    startDate: p.start_date || '',
-    endDate: p.end_date,
-    status: p.status === ProjectStatus.COMPLETED ? 'Concluído' : 
-            p.status === ProjectStatus.ON_HOLD ? 'Pausado' : 'Em Andamento',
-    observations: p.description
-  })
-
-  const mapApiCheckinToMobile = (c: ApiCheckin): Checkin => {
-    // Robust mapping to handle potential missing fields or structure mismatches
-    const projectName = c.project?.name || 'Projeto';
-    const userEmail = c.user?.email || '';
-    
-    return {
-      id: c.id.toString(),
-      projectId: c.project_id.toString(),
-      projectName: projectName,
-      arrivalTime: c.arrival_time,
-      startTime: c.start_time || c.created_at, // Fallback to created_at if start_time is missing
-      endTime: c.checkout_time,
-      totalHours: c.total_hours ? c.total_hours.toFixed(2) : undefined,
-      activities: c.tasks?.map(t => t.name) || [],
-      observations: c.observations,
-      date: c.created_at,
-      userEmail: userEmail
-    }
-  }
-
   const refreshData = useCallback(async () => {
     if (!isAuthenticated) return
     
@@ -66,24 +33,25 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     try {
       const [projectsData, checkinsData] = await Promise.all([
         projectService.getAll(),
-        checkinService.getHistory(1, 100) // Fetch last 100 checkins
+        checkinService.getHistory(1, 100)
       ])
 
+      // Use mappers to transform API data to domain models
       if (Array.isArray(projectsData)) {
-        setProjects(projectsData.map(mapApiProjectToMobile))
+        setProjects(ProjectMapper.toDomainList(projectsData))
       } else {
-        console.error('Invalid projects data format:', projectsData)
+        logger.warn('Invalid projects data format received', { type: typeof projectsData })
         setProjects([])
       }
 
       if (checkinsData && Array.isArray(checkinsData.items)) {
-        setCheckins(checkinsData.items.map(mapApiCheckinToMobile))
+        setCheckins(CheckinMapper.toDomainList(checkinsData.items))
       } else {
-        console.error('Invalid checkins data format:', checkinsData)
+        logger.warn('Invalid checkins data format received', { type: typeof checkinsData })
         setCheckins([])
       }
     } catch (error) {
-      console.error('Error fetching data:', error)
+      logger.error('Failed to fetch data', error as Error, { context: 'DataContext.refreshData' })
       toast.error('Erro ao carregar dados')
     } finally {
       setIsLoading(false)
@@ -110,12 +78,12 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
       }
       
       const newProject = await projectService.create(apiProject)
-      const mappedProject = mapApiProjectToMobile(newProject)
+      const mappedProject = ProjectMapper.toDomain(newProject)
       setProjects(prev => [...prev, mappedProject])
       toast.success('Projeto criado com sucesso!')
       return mappedProject
     } catch (error) {
-      console.error('Error creating project:', error)
+      logger.error('Failed to create project', error as Error, { projectName: project.name })
       toast.error('Erro ao criar projeto')
       return undefined
     }
@@ -139,10 +107,10 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
       }
 
       const newCheckin = await checkinService.createFull(apiCheckinPayload)
-      setCheckins(prev => [mapApiCheckinToMobile(newCheckin), ...prev])
+      setCheckins(prev => [CheckinMapper.toDomain(newCheckin), ...prev])
       toast.success('Check-in salvo com sucesso!')
     } catch (error) {
-      console.error('Error creating checkin:', error)
+      logger.error('Failed to create checkin', error as Error, { projectId: checkin.projectId })
       toast.error('Erro ao salvar check-in')
     }
   }
@@ -160,7 +128,7 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
       await projectService.delete(Number(id))
       toast.success('Projeto excluído com sucesso!')
     } catch (error) {
-      console.error('Error deleting project:', error)
+      logger.error('Failed to delete project', error as Error, { projectId: id })
       toast.error('Erro ao excluir projeto')
       // Revert on failure
       setProjects(previous)

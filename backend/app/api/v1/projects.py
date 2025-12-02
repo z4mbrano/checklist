@@ -201,13 +201,41 @@ async def delete_project(
     current_user: User = Depends(get_current_active_user)
 ) -> None:
     """
-    Soft delete project.
+    Delete project with authorization check.
+    
+    Security: OWASP A01:2021 - Broken Access Control
+    - Admin can delete any project
+    - Supervisor can delete projects they are responsible for
+    - Regular users cannot delete projects
     
     Returns:
         204: Project deleted successfully
+        403: Forbidden (not authorized to delete this project)
         404: Project not found
         401: Unauthorized
     """
+    # CRITICAL SECURITY FIX: Verify ownership before deletion
+    project = service.get_project(project_id)
+    
+    # Authorization logic
+    is_admin = current_user.is_admin
+    is_owner = project.responsible_user_id == current_user.id
+    is_supervisor = current_user.is_supervisor
+    
+    can_delete = is_admin or (is_supervisor and is_owner)
+    
+    if not can_delete:
+        logger.warning(
+            "unauthorized_delete_attempt",
+            user_id=current_user.id,
+            user_role=current_user.role,
+            project_id=project_id
+        )
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Você não tem permissão para excluir este projeto"
+        )
+    
     deleted = await service.delete_project(project_id=project_id, force=force)
     
     if not deleted:
@@ -215,6 +243,13 @@ async def delete_project(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Project with ID {project_id} not found"
         )
+    
+    logger.info(
+        "project_deleted",
+        project_id=project_id,
+        deleted_by=current_user.id,
+        force=force
+    )
 
 
 # ========================================
