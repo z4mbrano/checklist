@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { Search, X, Loader2 } from 'lucide-react'
 
-interface Option {
+export interface AutocompleteOption {
   id: number | string
   label: string
   subLabel?: string
@@ -10,9 +10,9 @@ interface Option {
 interface AutocompleteProps {
   label: string
   placeholder?: string
-  onSearch: (query: string) => Promise<Option[]>
-  onSelect: (option: Option) => void
-  initialValue?: Option | null
+  onSearch: (query: string) => Promise<AutocompleteOption[]>
+  onSelect: (option: AutocompleteOption) => void
+  initialValue?: AutocompleteOption | null
   className?: string
 }
 
@@ -25,16 +25,17 @@ export const Autocomplete = ({
   className = ''
 }: AutocompleteProps) => {
   const [query, setQuery] = useState('')
-  const [options, setOptions] = useState<Option[]>([])
+  const [options, setOptions] = useState<AutocompleteOption[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [isOpen, setIsOpen] = useState(false)
-  const [selected, setSelected] = useState<Option | null>(initialValue)
+  const [selected, setSelected] = useState<AutocompleteOption | null>(initialValue)
   const wrapperRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (initialValue) {
       setSelected(initialValue)
-      setQuery(initialValue.label && initialValue.label.trim() ? initialValue.label : String(initialValue.id))
+      const safeLabel = (initialValue.label ?? String(initialValue.id) ?? '').toString()
+      setQuery(safeLabel)
     }
   }, [initialValue])
 
@@ -50,19 +51,21 @@ export const Autocomplete = ({
 
   useEffect(() => {
     const timer = setTimeout(async () => {
-      if (query.length >= 2 && !selected) {
+      const q = (query ?? '').toString()
+      if (q.length >= 2 && !selected) {
         setIsLoading(true)
         try {
-          const results = await onSearch(query)
-          setOptions(results)
+          const results = await onSearch(q)
+          const safeResults = Array.isArray(results) ? results.filter(Boolean) : []
+          setOptions(safeResults as AutocompleteOption[])
           setIsOpen(true)
         } catch (error) {
-          console.error('Search failed:', error)
+          console.error('[AUTOCOMPLETE] Search failed:', error)
           setOptions([])
         } finally {
           setIsLoading(false)
         }
-      } else if (query.length < 2) {
+      } else if (q.length < 2) {
         setOptions([])
         setIsOpen(false)
       }
@@ -71,10 +74,10 @@ export const Autocomplete = ({
     return () => clearTimeout(timer)
   }, [query, onSearch, selected])
 
-  const handleSelect = (option: Option) => {
+  const handleSelect = (option: AutocompleteOption) => {
     setSelected(option)
-    const display = option.label && option.label.trim() ? option.label : String(option.id)
-    setQuery(display)
+    const safe = (option?.label ?? String(option?.id) ?? '').toString()
+    setQuery(safe)
     setIsOpen(false)
     onSelect(option)
   }
@@ -101,11 +104,11 @@ export const Autocomplete = ({
           placeholder={placeholder}
           value={query}
           onChange={(e) => {
-            setQuery(e.target.value)
+            setQuery((e.target.value ?? '').toString())
             if (selected) setSelected(null) // Clear selection on edit
           }}
           onFocus={() => {
-            if (options.length > 0 && !selected) setIsOpen(true)
+            if ((options?.length ?? 0) > 0 && !selected) setIsOpen(true)
           }}
         />
         <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
@@ -121,24 +124,24 @@ export const Autocomplete = ({
 
       {isOpen && options.length > 0 && (
         <div className="absolute z-10 mt-1 w-full bg-white shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm">
-          {options.map((option) => {
-            const primary = option.label && option.label.trim() ? option.label : String(option.id)
-            const secondary = option.subLabel && option.subLabel.trim() ? option.subLabel : ''
-            return (
-              <div
-                key={option.id}
-                className="cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-blue-50 text-slate-900"
-                onClick={() => handleSelect(option)}
-              >
-                <div className="flex flex-col">
-                  <span className="font-medium truncate">{primary || 'Sem nome'}</span>
-                  {secondary ? (
-                    <span className="text-xs text-slate-500 truncate">{secondary}</span>
-                  ) : null}
+          {options.map((item) => (
+            <div
+              key={item.id}
+              className="cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-blue-50"
+              onClick={() => handleSelect(item)}
+            >
+              <div className="flex flex-col">
+                <div className="font-medium text-slate-900">
+                  {item.label}
                 </div>
+                {item.subLabel && (
+                  <div className="text-xs text-slate-500">
+                    {item.subLabel}
+                  </div>
+                )}
               </div>
-            )
-          })}
+            </div>
+          ))}
         </div>
       )}
       

@@ -4,7 +4,7 @@ import { Card } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
 import { Select } from '../components/ui/Select'
-import { Autocomplete } from '../components/ui/Autocomplete'
+import { Autocomplete, AutocompleteOption } from '../components/ui/Autocomplete'
 import { ClientFormModal } from '../components/modals/ClientFormModal'
 import { Screen, Project } from '../types/mobile'
 import { useData } from '../contexts/DataContext'
@@ -61,46 +61,34 @@ export const ProjectFormScreen = ({
     return Object.keys(newErrors).length === 0
   }
 
-  const handleClientSearch = async (query: string) => {
+  const handleClientSearch = async (query: string): Promise<AutocompleteOption[]> => {
     console.log('[CLIENT SEARCH] Starting search with query:', query)
     try {
       const clients = await clientService.search(query)
       console.log('[CLIENT SEARCH] Raw API response:', clients)
-      console.log('[CLIENT SEARCH] Response length:', clients?.length)
       
-      const mapped = clients.map((c: any) => {
-        console.log('[CLIENT SEARCH] Mapping client:', c)
-        return {
-          id: c.id,
-          label: c.name || 'Sem nome',
-          subLabel: ''
-        }
-      })
-      console.log('[CLIENT SEARCH] Final mapped options:', mapped)
-      return mapped
+      return clients.map((c: any) => ({
+        id: c.id,
+        label: c.name,
+        subLabel: ''
+      }))
     } catch (error) {
       console.error('[CLIENT SEARCH] Error searching clients:', error)
       return []
     }
   }
 
-  const handleUserSearch = async (query: string) => {
+  const handleUserSearch = async (query: string): Promise<AutocompleteOption[]> => {
     console.log('[USER SEARCH] Starting search with query:', query)
     try {
       const users = await userService.search(query)
       console.log('[USER SEARCH] Raw API response:', users)
-      console.log('[USER SEARCH] Response length:', users?.length)
       
-      const mapped = users.map((u: any) => {
-        console.log('[USER SEARCH] Mapping user:', u)
-        return {
-          id: u.id,
-          label: u.name || 'Sem nome',
-          subLabel: ''
-        }
-      })
-      console.log('[USER SEARCH] Final mapped options:', mapped)
-      return mapped
+      return users.map((u: any) => ({
+        id: u.id,
+        label: u.name,
+        subLabel: ''
+      }))
     } catch (error) {
       console.error('[USER SEARCH] Error searching users:', error)
       return []
@@ -217,7 +205,7 @@ export const ProjectFormScreen = ({
               label="Responsável"
               placeholder="Buscar técnico..."
               onSearch={handleUserSearch}
-              onSelect={(option: any) => {
+              onSelect={(option: AutocompleteOption) => {
                 setFormData({
                   ...formData,
                   responsible: option.label,
