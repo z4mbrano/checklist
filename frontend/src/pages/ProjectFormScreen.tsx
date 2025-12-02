@@ -87,6 +87,8 @@ export const ProjectFormScreen = ({
     }
   }
 
+  // Removida lógica de autopreenchimento para simplificar UX; e-mail agora é editável manualmente.
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
@@ -198,12 +200,13 @@ export const ProjectFormScreen = ({
               placeholder="Buscar técnico..."
               onSearch={handleUserSearch}
               onSelect={(option: AutocompleteOption) => {
-                setFormData({
-                  ...formData,
+                setFormData(prev => ({
+                  ...prev,
                   responsible: option.label,
                   responsibleId: Number(option.id),
-                  responsibleEmail: option.subLabel
-                })
+                  // Se vier e-mail do serviço, pré-preenche; caso contrário mantém valor atual
+                  responsibleEmail: option.subLabel || prev.responsibleEmail
+                }))
               }}
               initialValue={formData.responsible ? { id: formData.responsibleId || 0, label: formData.responsible } : null}
             />
@@ -217,7 +220,6 @@ export const ProjectFormScreen = ({
               value={formData.responsibleEmail || ''} 
               onChange={(e) => setFormData({...formData, responsibleEmail: e.target.value})}
               required
-              readOnly
             />
             {errors.responsibleEmail && (
               <p className="text-sm text-red-600 mt-1 flex items-center gap-1">
