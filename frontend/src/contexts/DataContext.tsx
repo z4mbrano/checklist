@@ -15,6 +15,7 @@ interface DataContextType {
   updateProject: (project: Project) => void // Deprecated/Mock adapter
   addCheckin: (checkin: Checkin) => void // Deprecated/Mock adapter
   updateCheckin: (checkin: Checkin) => void // Deprecated/Mock adapter
+  deleteProject?: (id: string) => Promise<void>
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined)
@@ -151,6 +152,21 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     setCheckins(prev => prev.map(c => c.id === checkin.id ? checkin : c))
   }
 
+  const deleteProject = async (id: string) => {
+    // Optimistic update: remove from UI immediately
+    const previous = projects
+    setProjects(prev => prev.filter(p => p.id === undefined ? true : p.id !== id))
+    try {
+      await projectService.delete(Number(id))
+      toast.success('Projeto excluído com sucesso!')
+    } catch (error) {
+      console.error('Error deleting project:', error)
+      toast.error('Erro ao excluir projeto')
+      // Revert on failure
+      setProjects(previous)
+    }
+  }
+
   return (
     <DataContext.Provider value={{
       projects,
@@ -160,7 +176,8 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
       addProject,
       updateProject,
       addCheckin,
-      updateCheckin
+      updateCheckin,
+      deleteProject
     }}>
       {children}
     </DataContext.Provider>

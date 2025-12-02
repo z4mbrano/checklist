@@ -99,7 +99,7 @@ class ProjectService {
   }
 
   async delete(id: number): Promise<void> {
-    await api.delete(`/projects/${id}`)
+    await api.delete(`/projects/${id}`, { params: { force: true } })
   }
 }
 

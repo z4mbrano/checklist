@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react'
-import { ArrowLeft, Folder, ChevronRight, Plus } from 'lucide-react'
+import { ArrowLeft, Folder, ChevronRight, Plus, Trash2 } from 'lucide-react'
 import { Card } from '../components/ui/Card'
 import { SearchBar } from '../components/ui/SearchBar'
 import { Screen, Project } from '../types/mobile'
@@ -16,7 +16,7 @@ export const HistoryScreen = ({
   onSelectProject
 }: HistoryScreenProps) => {
   const { user } = useAuth()
-  const { projects, checkins } = useData()
+  const { projects, checkins, deleteProject } = useData()
   const [searchTerm, setSearchTerm] = useState('')
 
   const filteredProjects = useMemo(() => {
@@ -53,6 +53,7 @@ export const HistoryScreen = ({
               <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center text-blue-900">
                 <Folder size={20} />
               </div>
+              <div className="flex items-center gap-2">
               <span className={`px-2 py-1 rounded text-xs font-bold ${
                 p.status === 'Em Andamento' ? 'bg-emerald-100 text-emerald-700' : 
                 p.status === 'Pausado' ? 'bg-orange-100 text-orange-700' :
@@ -60,6 +61,21 @@ export const HistoryScreen = ({
               }`}>
                 {p.status}
               </span>
+              <button
+                className="text-red-500 hover:bg-red-50 p-2 rounded"
+                title="Excluir projeto"
+                onClick={async (e) => {
+                  e.stopPropagation()
+                  const ok = window.confirm('Tem certeza que deseja excluir este projeto?')
+                  if (!ok) return
+                  if (deleteProject) {
+                    await deleteProject(p.id)
+                  }
+                }}
+              >
+                <Trash2 size={16} />
+              </button>
+              </div>
             </div>
             <h3 className="font-bold text-slate-800 mb-1">{p.name}</h3>
             <p className="text-sm text-slate-500 mb-1">{p.client}</p>

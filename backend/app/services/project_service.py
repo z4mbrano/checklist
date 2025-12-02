@@ -296,15 +296,12 @@ class ProjectService:
         
         return updated_project
     
-    async def delete_project(self, project_id: int) -> bool:
+    async def delete_project(self, project_id: int, force: bool = False) -> bool:
         """
-        Soft delete project with cache invalidation.
-        
-        Args:
-            project_id: Project to delete
-            
-        Returns:
-            True if deleted, False if not found
+        Delete project with cache invalidation.
+        If force=True, perform hard delete (physical removal).
+        Else perform soft delete (if repository is configured that way).
+        Currently repository.delete performs hard delete per requirements.
         """
         deleted = self.repository.delete(project_id)
         
@@ -313,7 +310,7 @@ class ProjectService:
             await invalidate_project_cache(project_id)
             await invalidate_projects_list_cache()
             
-            logger.info("project_deleted_via_service", project_id=project_id)
+            logger.info("project_deleted_via_service", project_id=project_id, force=force)
         
         return deleted
     

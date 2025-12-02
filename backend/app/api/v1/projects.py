@@ -196,6 +196,7 @@ async def update_project(
 async def delete_project(
     *,
     project_id: int,
+    force: bool = Query(False, description="Force hard delete from database"),
     service: ProjectService = Depends(get_project_service),
     current_user: User = Depends(get_current_active_user)
 ) -> None:
@@ -207,7 +208,7 @@ async def delete_project(
         404: Project not found
         401: Unauthorized
     """
-    deleted = service.delete_project(project_id)
+    deleted = await service.delete_project(project_id=project_id, force=force)
     
     if not deleted:
         raise HTTPException(

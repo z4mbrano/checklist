@@ -364,20 +364,25 @@ class SQLAlchemyProjectRepository(IProjectRepository):
             raise RepositoryError(f"Failed to get overdue projects: {str(e)}") from e
     
     def delete(self, project_id: int) -> bool:
-        """Soft delete project."""
+        """Hard delete project (physical row removal).
+
+        Note: Previously implemented soft delete via deleted_at timestamp.
+        Business requirement now demands permanent removal.
+        """
         try:
-            orm_project = self.session.query(ORMProject).filter_by(
-                id=project_id,
-                deleted_at=None
-            ).first()
-            
-            if not orm_project:
+            # Execute physical delete
+            affected = (
+                self.session.query(ORMProject)
+                .filter(ORMProject.id == project_id)
+                .delete(synchronize_session=False)
+            )
+
+            if affected == 0:
                 return False
-            
-            orm_project.deleted_at = func.now()
-            self.session.flush()
-            
-            logger.info("project_deleted", project_id=project_id)
+
+            self.session.commit()
+
+            logger.info("project_hard_deleted", project_id=project_id)
             return True
             
         except Exception as e:
