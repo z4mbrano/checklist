@@ -62,7 +62,7 @@ export const ClientFormModal = ({ isOpen, onClose, onSuccess }: ClientFormModalP
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Novo Cliente">
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-5">
         <Input
           label="Nome / Razão Social *"
           name="nome"
@@ -71,7 +71,7 @@ export const ClientFormModal = ({ isOpen, onClose, onSuccess }: ClientFormModalP
           required
         />
         
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-5">
           <Input
             label="CNPJ"
             name="cnpj"
@@ -94,47 +94,58 @@ export const ClientFormModal = ({ isOpen, onClose, onSuccess }: ClientFormModalP
           onChange={handleChange}
         />
 
-        <Input
-          label="Endereço"
-          name="endereco"
-          value={formData.endereco}
-          onChange={handleChange}
-        />
+        <div className="space-y-5 pt-2">
+          <Input
+            label="Endereço"
+            name="endereco"
+            value={formData.endereco}
+            onChange={handleChange}
+          />
 
-        <div className="grid grid-cols-3 gap-4">
-          <div className="col-span-1">
-            <Input
-              label="CEP"
-              name="cep"
-              value={formData.cep}
-              onChange={handleChange}
-            />
-          </div>
-          <div className="col-span-1">
-            <Input
-              label="Cidade"
-              name="cidade"
-              value={formData.cidade}
-              onChange={handleChange}
-            />
-          </div>
-          <div className="col-span-1">
-            <Input
-              label="UF"
-              name="estado"
-              value={formData.estado}
-              onChange={handleChange}
-              maxLength={2}
-            />
+          <div className="grid grid-cols-10 gap-5">
+            <div className="col-span-4">
+              <Input
+                label="Cidade"
+                name="cidade"
+                value={formData.cidade}
+                onChange={handleChange}
+              />
+            </div>
+            <div className="col-span-2">
+              <Input
+                label="UF"
+                name="estado"
+                value={formData.estado}
+                onChange={handleChange}
+                maxLength={2}
+              />
+            </div>
+            <div className="col-span-4">
+              <Input
+                label="CEP"
+                name="cep"
+                value={formData.cep}
+                onChange={handleChange}
+              />
+            </div>
           </div>
         </div>
 
-        <div className="flex justify-end gap-2 pt-4">
-          <Button type="button" variant="outline" onClick={onClose}>
+        <div className="flex justify-end gap-3 pt-6">
+          <Button 
+            type="button" 
+            variant="outline" 
+            onClick={onClose}
+            className="w-auto border-0 text-slate-500 hover:bg-slate-100 hover:text-slate-700"
+          >
             Cancelar
           </Button>
-          <Button type="submit" isLoading={isLoading}>
-            Salvar Cliente
+          <Button 
+            type="submit" 
+            disabled={isLoading}
+            className="w-auto px-8"
+          >
+            {isLoading ? 'Salvando...' : 'Salvar Cliente'}
           </Button>
         </div>
       </form>

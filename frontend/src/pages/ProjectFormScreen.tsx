@@ -178,14 +178,14 @@ export const ProjectFormScreen = ({
                   initialValue={formData.client ? { id: formData.clientId || 0, label: formData.client } : null}
                 />
               </div>
-              <Button 
-                type="button" 
-                variant="outline" 
-                className="mb-[2px]"
+              <button 
+                type="button"
+                className="w-10 h-10 mb-[2px] flex items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-blue-600 transition-all"
                 onClick={() => setIsClientModalOpen(true)}
+                title="Novo Cliente"
               >
                 <Plus size={20} />
-              </Button>
+              </button>
             </div>
             {errors.client && (
               <p className="text-sm text-red-600 mt-1 flex items-center gap-1">
