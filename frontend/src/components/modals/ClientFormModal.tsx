@@ -62,7 +62,7 @@ export const ClientFormModal = ({ isOpen, onClose, onSuccess }: ClientFormModalP
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Novo Cliente">
-      <form onSubmit={handleSubmit} className="space-y-5">
+      <form onSubmit={handleSubmit} className="space-y-6">
         <Input
           label="Nome / Razão Social *"
           name="nome"
@@ -94,7 +94,9 @@ export const ClientFormModal = ({ isOpen, onClose, onSuccess }: ClientFormModalP
           onChange={handleChange}
         />
 
-        <div className="space-y-5 pt-2">
+        <div className="pt-4 border-t border-slate-100">
+          <h3 className="text-sm font-semibold text-slate-600 mb-4 uppercase tracking-wide">Endereço</h3>
+          <div className="space-y-5">
           <Input
             label="Endereço"
             name="endereco"
@@ -129,9 +131,10 @@ export const ClientFormModal = ({ isOpen, onClose, onSuccess }: ClientFormModalP
               />
             </div>
           </div>
+          </div>
         </div>
 
-        <div className="flex justify-end gap-3 pt-6">
+        <div className="flex justify-end gap-4 pt-8 border-t border-slate-100 mt-8">
           <Button 
             type="button" 
             variant="outline" 
