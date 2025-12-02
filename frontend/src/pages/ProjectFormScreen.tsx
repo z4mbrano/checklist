@@ -64,14 +64,10 @@ export const ProjectFormScreen = ({
   const handleClientSearch = async (query: string): Promise<AutocompleteOption[]> => {
     console.log('[CLIENT SEARCH] Starting search with query:', query)
     try {
-      const clients = await clientService.search(query)
-      console.log('[CLIENT SEARCH] Raw API response:', clients)
-      
-      return clients.map((c: any) => ({
-        id: c.id,
-        label: c.name,
-        subLabel: ''
-      }))
+      // Client service already returns { id, label, subLabel }
+      const options = await clientService.search(query)
+      console.log('[CLIENT SEARCH] Options:', options)
+      return options as unknown as AutocompleteOption[]
     } catch (error) {
       console.error('[CLIENT SEARCH] Error searching clients:', error)
       return []
@@ -81,14 +77,10 @@ export const ProjectFormScreen = ({
   const handleUserSearch = async (query: string): Promise<AutocompleteOption[]> => {
     console.log('[USER SEARCH] Starting search with query:', query)
     try {
-      const users = await userService.search(query)
-      console.log('[USER SEARCH] Raw API response:', users)
-      
-      return users.map((u: any) => ({
-        id: u.id,
-        label: u.name,
-        subLabel: ''
-      }))
+      // User service returns { id, label: name, subLabel: email }
+      const options = await userService.search(query)
+      console.log('[USER SEARCH] Options:', options)
+      return options as unknown as AutocompleteOption[]
     } catch (error) {
       console.error('[USER SEARCH] Error searching users:', error)
       return []

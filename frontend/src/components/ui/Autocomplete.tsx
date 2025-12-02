@@ -123,19 +123,19 @@ export const Autocomplete = ({
       </div>
 
       {isOpen && options.length > 0 && (
-        <div className="absolute z-10 mt-1 w-full bg-white shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm">
+        <div className="absolute z-50 mt-1 w-full bg-white shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none">
           {options.map((item) => (
             <div
               key={item.id}
-              className="cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-blue-50"
+              className="cursor-pointer select-none relative py-2 px-3 hover:bg-slate-100"
               onClick={() => handleSelect(item)}
             >
               <div className="flex flex-col">
-                <div className="font-medium text-slate-900">
+                <div className="font-medium text-slate-800 text-base">
                   {item.label}
                 </div>
                 {item.subLabel && (
-                  <div className="text-xs text-slate-500">
+                  <div className="text-xs text-slate-600">
                     {item.subLabel}
                   </div>
                 )}
