@@ -1,6 +1,7 @@
-import React from 'react'
+import React, { useState, useMemo } from 'react'
 import { ArrowLeft, Folder, ChevronRight, Plus } from 'lucide-react'
 import { Card } from '../components/ui/Card'
+import { SearchBar } from '../components/ui/SearchBar'
 import { Screen, Project } from '../types/mobile'
 import { useData } from '../contexts/DataContext'
 import { useAuth } from '../contexts/AuthContext'
@@ -16,15 +17,17 @@ export const HistoryScreen = ({
 }: HistoryScreenProps) => {
   const { user } = useAuth()
   const { projects, checkins } = useData()
+  const [searchTerm, setSearchTerm] = useState('')
 
-  // Filter projects based on user role
-  // TODO: Re-enable filtering when API returns responsible email
-  const filteredProjects = projects; 
-  /* 
-  const filteredProjects = user?.isAdmin 
-    ? projects 
-    : projects.filter(p => p.responsibleEmail === user?.email)
-  */
+  const filteredProjects = useMemo(() => {
+    const base = projects // Adjust later if role-based filtering returns
+    if (!searchTerm.trim()) return base
+    const term = searchTerm.toLowerCase()
+    return base.filter(p => 
+      p.name.toLowerCase().includes(term) ||
+      (p.client && p.client.toLowerCase().includes(term))
+    )
+  }, [projects, searchTerm])
 
   return (
     <div className="p-6 max-w-5xl mx-auto">
@@ -42,6 +45,7 @@ export const HistoryScreen = ({
         </button>
       </header>
 
+      <SearchBar value={searchTerm} onChange={setSearchTerm} placeholder="Buscar projetos..." className="mb-6" />
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredProjects.map(p => (
           <Card key={p.id} onClick={() => { onSelectProject(p); onNavigate('projectDetail') }} className="p-6 hover:shadow-md transition-shadow cursor-pointer group">

@@ -1,8 +1,9 @@
-import React from 'react'
+import React, { useState, useMemo } from 'react'
 import { ArrowLeft, Plus, Folder, ChevronRight } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { useData } from '../contexts/DataContext'
 import { Card } from '../components/ui/Card'
+import { SearchBar } from '../components/ui/SearchBar'
 import { Button } from '../components/ui/Button'
 import { Screen, Project } from '../types/mobile'
 
@@ -14,11 +15,17 @@ interface SelectProjectScreenProps {
 export const SelectProjectScreen = ({ onNavigate, onSelectProject }: SelectProjectScreenProps) => {
   const { user, isAdmin } = useAuth()
   const { projects } = useData()
+  const [searchTerm, setSearchTerm] = useState('')
 
-  // Filter projects based on permissions
-  const filteredProjects = isAdmin 
-    ? projects 
-    : projects.filter(p => p.responsibleEmail === user?.email)
+  const filteredProjects = useMemo(() => {
+    const base = isAdmin ? projects : projects.filter(p => p.responsibleEmail === user?.email)
+    if (!searchTerm.trim()) return base
+    const term = searchTerm.toLowerCase()
+    return base.filter(p => 
+      p.name.toLowerCase().includes(term) ||
+      (p.client && p.client.toLowerCase().includes(term))
+    )
+  }, [projects, isAdmin, user, searchTerm])
 
   return (
     <div className="p-6 max-w-2xl mx-auto min-h-screen flex flex-col">
@@ -35,6 +42,7 @@ export const SelectProjectScreen = ({ onNavigate, onSelectProject }: SelectProje
       </header>
 
       <div className="flex-1 space-y-4">
+        <SearchBar value={searchTerm} onChange={setSearchTerm} placeholder="Buscar por nome ou cliente..." />
         {isAdmin && (
           <Button 
             variant="outline" 
