@@ -70,7 +70,7 @@ class SQLAlchemyProjectRepository(IProjectRepository):
         Returns:
             Domain entity
         """
-        return DomainProject(
+        domain_project = DomainProject(
             id=orm_project.id,
             name=orm_project.nome,
             description=orm_project.descricao,
@@ -86,6 +86,15 @@ class SQLAlchemyProjectRepository(IProjectRepository):
             updated_at=orm_project.updated_at,
             deleted_at=orm_project.deleted_at
         )
+
+        # Populate transient fields if loaded
+        if orm_project.client:
+            domain_project.client = orm_project.client
+            
+        if orm_project.responsavel:
+            domain_project.responsible_user = orm_project.responsavel
+            
+        return domain_project
     
     def _to_orm(self, domain_project: DomainProject) -> ORMProject:
         """

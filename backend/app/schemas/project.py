@@ -166,7 +166,9 @@ class ProjectResponse(BaseModel):
             is_overdue=project.is_overdue,
             duration_days=project.duration_days,
             created_at=project.created_at,
-            updated_at=project.updated_at
+            updated_at=project.updated_at,
+            client=project.client,
+            responsible_user=project.responsible_user
         )
 
 

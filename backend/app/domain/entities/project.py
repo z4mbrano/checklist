@@ -12,7 +12,7 @@ Business Rules Enforced:
 """
 from dataclasses import dataclass, field
 from datetime import date, datetime
-from typing import Optional
+from typing import Optional, Any
 from enum import Enum
 
 
@@ -69,6 +69,10 @@ class Project:
     # Relationships (by ID - domain doesn't need full objects)
     client_id: int = 0
     responsible_user_id: int = 0
+    
+    # Transient / Read-only relationships (populated by repository for DTOs)
+    client: Optional[Any] = None
+    responsible_user: Optional[Any] = None
     
     # Metadata
     observations: Optional[str] = None
