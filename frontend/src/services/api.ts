@@ -160,7 +160,7 @@ class CheckinService {
   }
 
   // Iniciar check-in
-  async startCheckin(data: { project_id: number, start_time?: string }): Promise<Checkin> {
+  async startCheckin(data: { project_id: number, start_time?: string, arrival_time?: string }): Promise<Checkin> {
     const response = await api.post('/checkins/start', data)
     return response.data
   }

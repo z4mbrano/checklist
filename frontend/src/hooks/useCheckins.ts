@@ -87,7 +87,7 @@ export function useActiveCheckin() {
 export function useStartCheckin() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: async (data: { project_id: number, start_time?: string }) => {
+    mutationFn: async (data: { project_id: number, start_time?: string, arrival_time?: string }) => {
       const apiCheckin = await checkinService.startCheckin(data)
       return CheckinMapper.toDomain(apiCheckin)
     },

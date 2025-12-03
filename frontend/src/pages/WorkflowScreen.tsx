@@ -7,7 +7,7 @@ import { Screen, Project, Checkin } from '../types/mobile'
 import { useData } from '../contexts/DataContext'
 import { useAuth } from '../contexts/AuthContext'
 import { ACTIVITY_TAGS } from '../constants'
-import { useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { useProject } from '../hooks/useProjects'
 import { useStartCheckin, useStopCheckin } from '../hooks/useCheckins'
 import toast from 'react-hot-toast'
@@ -25,6 +25,7 @@ export const WorkflowScreen = ({
   workflowStep: propStep,
   setWorkflowStep: propSetStep
 }: WorkflowScreenProps) => {
+  const navigate = useNavigate()
   const { user } = useAuth()
   const { activeCheckin, refreshData } = useData()
   
@@ -132,7 +133,8 @@ export const WorkflowScreen = ({
       try {
         await startCheckinMutation.mutateAsync({
           project_id: Number(selectedProject.id),
-          start_time: now
+          start_time: now,
+          arrival_time: timestamps.arrival
         })
         setTimestamps({ ...timestamps, start: now })
         setWorkflowStep('working')
@@ -175,7 +177,7 @@ export const WorkflowScreen = ({
       
       toast.success('Check-in finalizado com sucesso!')
       await refreshData() // Refresh history
-      onNavigate('success')
+      navigate('/menu')
     } catch (error) {
       toast.error('Erro ao finalizar check-in')
     }

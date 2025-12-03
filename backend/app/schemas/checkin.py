@@ -17,6 +17,7 @@ class CheckinCreateFull(BaseModel):
 class CheckinStart(BaseModel):
     project_id: int
     start_time: datetime = Field(default_factory=datetime.now)
+    arrival_time: Optional[datetime] = None
     user_id: Optional[int] = None
 
 class CheckinStop(BaseModel):
@@ -34,7 +35,7 @@ class CheckinResponse(BaseModel):
     created_at: datetime
     
     # Computed fields
-    arrival_time: Optional[datetime] = None
+    arrival_time: Optional[datetime] = Field(None, validation_alias='hora_chegada', serialization_alias='arrival_time')
     start_time: Optional[datetime] = None
     checkout_time: Optional[datetime] = None
     total_hours: Optional[float] = None
@@ -60,6 +61,17 @@ class CheckinResponse(BaseModel):
                     dt = dt.replace(tzinfo=timezone.utc)
                 start_dt = dt
             
+            arrival_dt = None
+            if hasattr(data, 'hora_chegada') and data.hora_chegada and data.data_inicio:
+                 # Combine date (from start) and arrival time
+                dt = datetime.combine(data.data_inicio, data.hora_chegada)
+                if dt.tzinfo is None:
+                    dt = dt.replace(tzinfo=timezone.utc)
+                arrival_dt = dt
+            elif start_dt:
+                # Fallback to start time if arrival not set
+                arrival_dt = start_dt
+
             end_dt = None
             if data.data_fim and data.hora_fim:
                 dt = datetime.combine(data.data_fim, data.hora_fim)
@@ -82,7 +94,7 @@ class CheckinResponse(BaseModel):
                 "project_id": data.projeto_id,
                 "user_id": data.usuario_id,
                 "created_at": data.created_at,
-                "arrival_time": start_dt, # Mapping start to arrival as fallback
+                "arrival_time": arrival_dt,
                 "start_time": start_dt,
                 "checkout_time": end_dt,
                 "total_hours": total_hours,

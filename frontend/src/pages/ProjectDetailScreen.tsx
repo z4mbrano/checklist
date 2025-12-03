@@ -180,9 +180,16 @@ export const ProjectDetailScreen = ({
             <div className="flex justify-between items-start mb-3">
               <div>
                 <p className="font-bold text-slate-800">{new Date(c.date).toLocaleDateString()}</p>
-                <p className="text-sm text-slate-500">
-                  {c.startTime && new Date(c.startTime).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})} - {c.endTime && new Date(c.endTime).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}
-                </p>
+                <div className="text-sm text-slate-500">
+                  {c.arrivalTime && (
+                    <p className="text-xs text-slate-400 mb-0.5">
+                      Chegada: {new Date(c.arrivalTime.endsWith('Z') || c.arrivalTime.includes('+') || c.arrivalTime.includes('-') ? c.arrivalTime : c.arrivalTime + 'Z').toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}
+                    </p>
+                  )}
+                  <p>
+                    {c.startTime && new Date(c.startTime).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})} - {c.endTime && new Date(c.endTime).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}
+                  </p>
+                </div>
               </div>
               <div className="text-right">
                 <span className="block font-mono font-bold text-blue-900">{c.totalHours}h</span>

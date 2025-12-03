@@ -30,6 +30,7 @@ class Checkin(Base):
     # Time tracking
     data_inicio = Column(Date, nullable=False, index=True)
     hora_inicio = Column(Time, nullable=False)
+    hora_chegada = Column(Time, nullable=True) # Added arrival time
     data_fim = Column(Date, index=True)
     hora_fim = Column(Time)
     duracao_minutos = Column(Integer)  # Calculated automatically

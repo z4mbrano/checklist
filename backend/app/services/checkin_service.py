@@ -24,6 +24,7 @@ class CheckinService:
             usuario_id=data.user_id,
             data_inicio=data.start_time.date(),
             hora_inicio=data.start_time.time(),
+            hora_chegada=data.arrival_time.time() if data.arrival_time else data.start_time.time(),
             status=CheckinStatus.EM_ANDAMENTO
         )
         
