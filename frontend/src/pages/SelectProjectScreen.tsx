@@ -18,14 +18,16 @@ export const SelectProjectScreen = ({ onNavigate, onSelectProject }: SelectProje
   const [searchTerm, setSearchTerm] = useState('')
 
   const filteredProjects = useMemo(() => {
-    const base = isAdmin ? projects : projects.filter(p => p.responsibleEmail === user?.email)
+    // Backend already filters projects based on user role (responsible or contributor)
+    // So we can just use the projects list directly
+    const base = projects
     if (!searchTerm.trim()) return base
     const term = searchTerm.toLowerCase()
     return base.filter(p => 
       p.name.toLowerCase().includes(term) ||
       (p.client && p.client.toLowerCase().includes(term))
     )
-  }, [projects, isAdmin, user, searchTerm])
+  }, [projects, searchTerm])
 
   return (
     <div className="p-6 max-w-2xl mx-auto min-h-screen flex flex-col">
