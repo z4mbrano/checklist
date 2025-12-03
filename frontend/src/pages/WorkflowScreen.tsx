@@ -51,10 +51,26 @@ export const WorkflowScreen = ({
     // 1. Check backend active checkin (Working state)
     if (activeCheckin && selectedProject && activeCheckin.projectId === selectedProject.id) {
       setWorkflowStep('working')
+      
+      // Try to recover arrival time from local storage if backend doesn't provide it (or provides same as start)
+      const savedState = localStorage.getItem(`workflow_state_${selectedProject?.id}`)
+      let arrivalTime = activeCheckin.arrivalTime
+
+      if (savedState) {
+        try {
+          const parsed = JSON.parse(savedState)
+          if (parsed.arrival) {
+             arrivalTime = parsed.arrival
+          }
+        } catch (e) {
+          // ignore
+        }
+      }
+
       setTimestamps(prev => ({
         ...prev,
         start: activeCheckin.startTime,
-        arrival: activeCheckin.arrivalTime
+        arrival: arrivalTime
       }))
       return
     }
@@ -120,8 +136,8 @@ export const WorkflowScreen = ({
         })
         setTimestamps({ ...timestamps, start: now })
         setWorkflowStep('working')
-        // Clear local state as backend takes over
-        localStorage.removeItem(`workflow_state_${selectedProject.id}`)
+        // Do NOT clear local state yet, we need arrival time for display
+        // localStorage.removeItem(`workflow_state_${selectedProject.id}`)
         toast.success('Check-in iniciado!')
       } catch (error) {
         toast.error('Erro ao iniciar check-in')
@@ -153,6 +169,9 @@ export const WorkflowScreen = ({
           observations: checkoutData.obs
         }
       })
+      
+      // Now we can clear the local state
+      localStorage.removeItem(`workflow_state_${selectedProject.id}`)
       
       toast.success('Check-in finalizado com sucesso!')
       await refreshData() // Refresh history
