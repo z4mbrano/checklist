@@ -6,11 +6,11 @@ import logging
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 from app.db.session import get_db
-from app.schemas.user import UserResponse
+from app.schemas.user import UserResponse, UserCreate
 from app.schemas.common import SearchItemResponse
 from app.services.user_service import UserService
 from app.infrastructure.repositories.sqlalchemy_user_repository import SQLAlchemyUserRepository
-from app.api.deps import get_current_active_user
+from app.api.deps import get_current_active_user, require_admin
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -18,6 +18,18 @@ router = APIRouter()
 def get_user_service(db: Session = Depends(get_db)) -> UserService:
     repository = SQLAlchemyUserRepository(db)
     return UserService(repository)
+
+@router.post("/", response_model=UserResponse)
+def create_user(
+    user_data: UserCreate,
+    service: UserService = Depends(get_user_service),
+    current_user = Depends(require_admin)
+):
+    """
+    Create a new user. Only admins can perform this action.
+    """
+    logger.info(f"[USER CREATE] Admin {current_user.email} creating user {user_data.email}")
+    return service.create_user(user_data)
 
 @router.get("/search", response_model=List[SearchItemResponse])
 def search_users(

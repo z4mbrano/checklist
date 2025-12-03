@@ -43,3 +43,4 @@ export type Screen =
   | 'history' 
   | 'projectDetail' 
   | 'success'
+  | 'addUser'
