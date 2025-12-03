@@ -1,6 +1,7 @@
 export interface Client {
   id: number
   name: string
+  nome?: string // Fallback for backend alias issues
   description?: string
   contact_email?: string
   contact_phone?: string

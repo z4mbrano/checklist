@@ -28,12 +28,23 @@ class ClientUpdate(BaseModel):
     class Config:
         populate_by_name = True
 
-class ClientResponse(ClientBase):
+class ClientResponse(BaseModel):
+    """
+    Response schema for Client.
+    Decoupled from ClientBase to avoid alias conflicts.
+    """
     id: int
+    name: str = Field(validation_alias="nome", serialization_alias="name")
+    cnpj: str
+    phone: Optional[str] = Field(None, validation_alias="telefone", serialization_alias="phone")
+    email: Optional[str] = None
+    address: Optional[str] = Field(None, validation_alias="endereco", serialization_alias="address")
+    city: str = Field(validation_alias="cidade", serialization_alias="city")
+    state: str = Field(validation_alias="estado", serialization_alias="state")
+    zip_code: Optional[str] = Field(None, validation_alias="cep", serialization_alias="zip_code")
     created_at: datetime
     updated_at: Optional[datetime] = None
 
     class Config:
         populate_by_name = True
         from_attributes = True
-        json_schema_extra = {"by_alias": True}

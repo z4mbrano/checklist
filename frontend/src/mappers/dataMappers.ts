@@ -21,7 +21,7 @@ export class ProjectMapper {
     return {
       id: apiProject.id.toString(),
       name: apiProject.name,
-      client: apiProject.client?.name || 'Cliente Desconhecido',
+      client: apiProject.client?.name || apiProject.client?.nome || 'Cliente Desconhecido',
       clientId: apiProject.client?.id,
       responsible: apiProject.responsible_user?.name || 'Técnico',
       responsibleId: apiProject.responsible_user?.id,
