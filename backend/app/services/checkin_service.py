@@ -51,8 +51,17 @@ class CheckinService:
             raise HTTPException(status_code=400, detail="Check-in is not active")
 
         # Calculate duration
+        # Ensure start_dt is offset-naive for calculation if end_time is naive, or both aware
         start_dt = datetime.combine(checkin.data_inicio, checkin.hora_inicio)
-        duration_minutes = int((data.end_time - start_dt).total_seconds() / 60)
+        
+        # Handle timezone awareness mismatch
+        end_dt = data.end_time
+        if start_dt.tzinfo is None and end_dt.tzinfo is not None:
+            start_dt = start_dt.replace(tzinfo=end_dt.tzinfo)
+        elif start_dt.tzinfo is not None and end_dt.tzinfo is None:
+            end_dt = end_dt.replace(tzinfo=start_dt.tzinfo)
+            
+        duration_minutes = int((end_dt - start_dt).total_seconds() / 60)
         
         activities_str = "\nActivities: " + ", ".join(data.activities) if data.activities else ""
         full_observations = (data.observations or "") + activities_str
