@@ -138,7 +138,7 @@ async def get_project(
         401: Unauthorized
     """
     try:
-        project = service.get_project(project_id)
+        project = await service.get_project(project_id)
         return ProjectResponse.from_domain(project)
         
     except ProjectNotFoundError as e:
@@ -168,7 +168,7 @@ async def update_project(
         401: Unauthorized
     """
     try:
-        project = service.update_project(
+        project = await service.update_project(
             project_id=project_id,
             name=request.name,
             description=request.description,
@@ -215,7 +215,7 @@ async def delete_project(
         401: Unauthorized
     """
     # CRITICAL SECURITY FIX: Verify ownership before deletion
-    project = service.get_project(project_id)
+    project = await service.get_project(project_id)
     
     # Authorization logic
     is_admin = current_user.is_admin
@@ -274,7 +274,7 @@ async def start_project(
         404: Project not found
     """
     try:
-        project = service.start_project(project_id)
+        project = await service.start_project(project_id)
         return ProjectResponse.from_domain(project)
         
     except ProjectNotFoundError as e:
@@ -297,7 +297,7 @@ async def pause_project(
     Business Rule: Can only pause EM_ANDAMENTO projects.
     """
     try:
-        project = service.pause_project(project_id)
+        project = await service.pause_project(project_id)
         return ProjectResponse.from_domain(project)
         
     except ProjectNotFoundError as e:
@@ -321,7 +321,7 @@ async def complete_project(
     """
     try:
         completion_date = request.completion_date if request else None
-        project = service.complete_project(project_id, completion_date)
+        project = await service.complete_project(project_id, completion_date)
         return ProjectResponse.from_domain(project)
         
     except ProjectNotFoundError as e:
@@ -345,7 +345,7 @@ async def cancel_project(
     """
     try:
         reason = request.cancellation_reason if request else None
-        project = service.cancel_project(project_id, reason)
+        project = await service.cancel_project(project_id, reason)
         return ProjectResponse.from_domain(project)
         
     except ProjectNotFoundError as e:

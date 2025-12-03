@@ -8,6 +8,8 @@ import { Screen, Project, Checkin } from '../types/mobile'
 import { useData } from '../contexts/DataContext'
 import { useAuth } from '../contexts/AuthContext'
 import { ACTIVITY_TAGS } from '../constants'
+import { useParams } from 'react-router-dom'
+import { useProject } from '../hooks/useProjects'
 
 // --- PRINT STYLES ---
 const PrintStyles = () => (
@@ -63,19 +65,46 @@ const PrintStyles = () => (
 )
 
 interface ProjectDetailScreenProps {
-  selectedProject: Project | null
+  selectedProject?: Project | null
   onNavigate: (screen: Screen) => void
 }
 
 export const ProjectDetailScreen = ({ 
-  selectedProject, 
+  selectedProject: propProject, 
   onNavigate
 }: ProjectDetailScreenProps) => {
   const { user } = useAuth()
   const { checkins, updateCheckin } = useData()
   const [editingCheckin, setEditingCheckin] = useState<Checkin | null>(null)
+  
+  const { id } = useParams<{ id: string }>()
+  const { data: fetchedProject, isLoading, error } = useProject(id || '')
+  
+  const selectedProject = fetchedProject || propProject
 
-  if (!selectedProject) return null
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="p-6 text-center">
+        <h2 className="text-xl font-bold text-red-600">Erro ao carregar projeto</h2>
+        <Button onClick={() => onNavigate('dashboard')} className="mt-4">Voltar</Button>
+      </div>
+    )
+  }
+
+  if (!selectedProject) return (
+    <div className="p-6 text-center">
+      <h2 className="text-xl font-bold text-slate-600">Projeto não encontrado</h2>
+      <Button onClick={() => onNavigate('dashboard')} className="mt-4">Voltar</Button>
+    </div>
+  )
   
   const projectCheckins = checkins.filter(c => c.projectId === selectedProject.id)
   

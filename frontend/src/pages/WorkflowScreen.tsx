@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { ArrowLeft, MapPin, Play, StopCircle, CheckCircle, Clock } from 'lucide-react'
 import { Card } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
@@ -7,27 +7,53 @@ import { Screen, Project, Checkin } from '../types/mobile'
 import { useData } from '../contexts/DataContext'
 import { useAuth } from '../contexts/AuthContext'
 import { ACTIVITY_TAGS } from '../constants'
+import { useParams } from 'react-router-dom'
+import { useProject } from '../hooks/useProjects'
 
 interface WorkflowScreenProps {
-  selectedProject: Project | null
+  selectedProject?: Project | null
   onNavigate: (screen: Screen) => void
-  workflowStep: 'idle' | 'arrived' | 'working' | 'checkout'
-  setWorkflowStep: (step: 'idle' | 'arrived' | 'working' | 'checkout') => void
+  workflowStep?: 'idle' | 'arrived' | 'working' | 'checkout'
+  setWorkflowStep?: (step: 'idle' | 'arrived' | 'working' | 'checkout') => void
 }
 
 export const WorkflowScreen = ({ 
-  selectedProject,
+  selectedProject: propProject,
   onNavigate,
-  workflowStep,
-  setWorkflowStep
+  workflowStep: propStep,
+  setWorkflowStep: propSetStep
 }: WorkflowScreenProps) => {
   const { user } = useAuth()
   const { addCheckin } = useData()
   
+  const { projectId } = useParams<{ projectId: string }>()
+  const { data: fetchedProject, isLoading } = useProject(projectId || '')
+  
+  const selectedProject = fetchedProject || propProject
+
+  // Internal state if props are not provided
+  const [internalStep, setInternalStep] = useState<'idle' | 'arrived' | 'working' | 'checkout'>('idle')
+  
+  const workflowStep = propStep || internalStep
+  const setWorkflowStep = propSetStep || setInternalStep
+  
   const [timestamps, setTimestamps] = useState<{arrival?: string, start?: string, end?: string}>({})
   const [checkoutData, setCheckoutData] = useState({ activities: [] as string[], other: '', obs: '' })
 
-  if (!selectedProject) return null
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    )
+  }
+
+  if (!selectedProject) return (
+    <div className="p-6 text-center">
+      <h2 className="text-xl font-bold text-slate-600">Projeto não encontrado</h2>
+      <Button onClick={() => onNavigate('dashboard')} className="mt-4">Voltar</Button>
+    </div>
+  )
   
   const formatTime = (iso?: string) => iso ? new Date(iso).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '--:--'
 

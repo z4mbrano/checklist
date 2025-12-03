@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { ArrowLeft, AlertCircle, Plus } from 'lucide-react'
 import { Card } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
@@ -9,6 +9,8 @@ import { ClientFormModal } from '../components/modals/ClientFormModal'
 import { Screen, Project } from '../types/mobile'
 import { useData } from '../contexts/DataContext'
 import { clientService, userService } from '../services/api'
+import { useParams } from 'react-router-dom'
+import { useProject } from '../hooks/useProjects'
 
 interface ProjectFormScreenProps {
   onNavigate: (screen: Screen) => void
@@ -24,6 +26,9 @@ export const ProjectFormScreen = ({
   mode = 'add'
 }: ProjectFormScreenProps) => {
   const { addProject, updateProject } = useData()
+  const { id } = useParams<{ id: string }>()
+  const { data: fetchedProject, isLoading } = useProject(id || '')
+
   const [isClientModalOpen, setIsClientModalOpen] = useState(false)
   
   const [formData, setFormData] = useState<Partial<Project>>(
@@ -40,6 +45,20 @@ export const ProjectFormScreen = ({
       status: 'Em Andamento'
     }
   )
+
+  useEffect(() => {
+    if (fetchedProject && mode === 'edit') {
+      setFormData(fetchedProject)
+    }
+  }, [fetchedProject, mode])
+
+  if (mode === 'edit' && isLoading && !initialData) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    )
+  }
   const [errors, setErrors] = useState<{name?: string; client?: string; responsibleEmail?: string}>({})
 
   const validateForm = () => {
