@@ -181,7 +181,8 @@ class ProjectService:
         skip: int = 0,
         limit: int = 100,
         status: Optional[ProjectStatus] = None,
-        client_id: Optional[int] = None
+        client_id: Optional[int] = None,
+        responsible_id: Optional[int] = None
     ) -> List[Project]:
         """
         List projects with OFFSET pagination (legacy).
@@ -193,6 +194,7 @@ class ProjectService:
             limit: Maximum results (capped at 100 for performance)
             status: Filter by status (optional)
             client_id: Filter by client (optional)
+            responsible_id: Filter by responsible user (optional)
             
         Returns:
             List of projects
@@ -201,12 +203,13 @@ class ProjectService:
         limit = min(limit, 100)
         
         return self.repository.get_all(
-            skip=skip,
-            limit=limit,
-            status=status,
-            client_id=client_id
+            skip=skip, 
+            limit=limit, 
+            status=status, 
+            client_id=client_id,
+            responsible_id=responsible_id
         )
-    
+
     def list_projects_cursor(
         self,
         cursor: Optional[int] = None,

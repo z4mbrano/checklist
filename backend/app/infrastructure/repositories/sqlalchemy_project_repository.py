@@ -219,7 +219,8 @@ class SQLAlchemyProjectRepository(IProjectRepository):
         skip: int = 0,
         limit: int = 100,
         status: Optional[ProjectStatus] = None,
-        client_id: Optional[int] = None
+        client_id: Optional[int] = None,
+        responsible_id: Optional[int] = None
     ) -> List[DomainProject]:
         """
         Get projects with filtering and OFFSET pagination.
@@ -244,6 +245,9 @@ class SQLAlchemyProjectRepository(IProjectRepository):
             
             if client_id:
                 query = query.filter(ORMProject.cliente_id == client_id)
+
+            if responsible_id:
+                query = query.filter(ORMProject.responsavel_id == responsible_id)
             
             # Pagination
             orm_projects = query.offset(skip).limit(limit).all()

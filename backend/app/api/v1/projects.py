@@ -112,11 +112,17 @@ async def list_projects(
         200: List of projects
         401: Unauthorized
     """
+    # Determine responsible_id filter based on user role
+    responsible_id = None
+    if current_user.role == "tecnico":
+        responsible_id = current_user.id
+
     projects = service.list_projects(
         skip=skip,
         limit=limit,
         status=status_filter,
-        client_id=client_id
+        client_id=client_id,
+        responsible_id=responsible_id
     )
     
     return [ProjectResponse.from_domain(p) for p in projects]
