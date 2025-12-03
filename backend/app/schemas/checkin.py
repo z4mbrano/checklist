@@ -1,5 +1,5 @@
 from typing import Optional, List, Any
-from datetime import datetime, date, time
+from datetime import datetime, date, time, timezone
 from pydantic import BaseModel, Field, model_validator, ConfigDict
 
 class CheckinBase(BaseModel):
@@ -13,6 +13,16 @@ class CheckinCreateFull(BaseModel):
     activities: List[str]
     observations: Optional[str] = None
     user_id: Optional[int] = None
+
+class CheckinStart(BaseModel):
+    project_id: int
+    start_time: datetime = Field(default_factory=datetime.now)
+    user_id: Optional[int] = None
+
+class CheckinStop(BaseModel):
+    end_time: datetime = Field(default_factory=datetime.now)
+    activities: List[str]
+    observations: Optional[str] = None
 
 class ProjectSummary(BaseModel):
     name: str
@@ -43,11 +53,19 @@ class CheckinResponse(BaseModel):
             # Construct datetimes
             start_dt = None
             if data.data_inicio and data.hora_inicio:
-                start_dt = datetime.combine(data.data_inicio, data.hora_inicio)
+                # Combine date and time
+                dt = datetime.combine(data.data_inicio, data.hora_inicio)
+                # Ensure it's UTC aware if naive
+                if dt.tzinfo is None:
+                    dt = dt.replace(tzinfo=timezone.utc)
+                start_dt = dt
             
             end_dt = None
             if data.data_fim and data.hora_fim:
-                end_dt = datetime.combine(data.data_fim, data.hora_fim)
+                dt = datetime.combine(data.data_fim, data.hora_fim)
+                if dt.tzinfo is None:
+                    dt = dt.replace(tzinfo=timezone.utc)
+                end_dt = dt
             
             # Calculate total hours
             total_hours = 0

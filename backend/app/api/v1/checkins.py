@@ -1,10 +1,10 @@
-from typing import List
+from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_active_user
 from app.models.user import User
-from app.schemas.checkin import CheckinCreateFull, CheckinResponse, CheckinListResponse
+from app.schemas.checkin import CheckinCreateFull, CheckinResponse, CheckinListResponse, CheckinStart, CheckinStop
 from app.services.checkin_service import CheckinService
 from app.domain.repositories.checkin_repository import CheckinRepository
 from app.db.session import get_db
@@ -14,6 +14,37 @@ router = APIRouter()
 def get_checkin_service(db: Session = Depends(get_db)) -> CheckinService:
     repository = CheckinRepository(db)
     return CheckinService(repository)
+
+@router.post("/start", response_model=CheckinResponse, status_code=status.HTTP_201_CREATED)
+async def start_checkin(
+    *,
+    request: CheckinStart,
+    service: CheckinService = Depends(get_checkin_service),
+    current_user: User = Depends(get_current_active_user)
+) -> CheckinResponse:
+    request.user_id = current_user.id
+    checkin = await service.start_checkin(request)
+    return checkin
+
+@router.post("/{checkin_id}/stop", response_model=CheckinResponse)
+async def stop_checkin(
+    *,
+    checkin_id: int,
+    request: CheckinStop,
+    service: CheckinService = Depends(get_checkin_service),
+    current_user: User = Depends(get_current_active_user)
+) -> CheckinResponse:
+    checkin = await service.stop_checkin(checkin_id, request, current_user.id)
+    return checkin
+
+@router.get("/active", response_model=Optional[CheckinResponse])
+async def get_active_checkin(
+    *,
+    service: CheckinService = Depends(get_checkin_service),
+    current_user: User = Depends(get_current_active_user)
+) -> Optional[CheckinResponse]:
+    checkin = await service.get_active_checkin(current_user.id)
+    return checkin
 
 @router.post("/full", response_model=CheckinResponse, status_code=status.HTTP_201_CREATED)
 async def create_full_checkin(

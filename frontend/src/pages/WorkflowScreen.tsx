@@ -9,6 +9,8 @@ import { useAuth } from '../contexts/AuthContext'
 import { ACTIVITY_TAGS } from '../constants'
 import { useParams } from 'react-router-dom'
 import { useProject } from '../hooks/useProjects'
+import { useStartCheckin, useStopCheckin } from '../hooks/useCheckins'
+import toast from 'react-hot-toast'
 
 interface WorkflowScreenProps {
   selectedProject?: Project | null
@@ -24,7 +26,7 @@ export const WorkflowScreen = ({
   setWorkflowStep: propSetStep
 }: WorkflowScreenProps) => {
   const { user } = useAuth()
-  const { addCheckin } = useData()
+  const { activeCheckin, refreshData } = useData()
   
   const { projectId } = useParams<{ projectId: string }>()
   const { data: fetchedProject, isLoading } = useProject(projectId || '')
@@ -39,6 +41,42 @@ export const WorkflowScreen = ({
   
   const [timestamps, setTimestamps] = useState<{arrival?: string, start?: string, end?: string}>({})
   const [checkoutData, setCheckoutData] = useState({ activities: [] as string[], other: '', obs: '' })
+
+  // Mutations
+  const startCheckinMutation = useStartCheckin()
+  const stopCheckinMutation = useStopCheckin()
+
+  // Restore state from active checkin or local storage
+  useEffect(() => {
+    // 1. Check backend active checkin (Working state)
+    if (activeCheckin && selectedProject && activeCheckin.projectId === selectedProject.id) {
+      setWorkflowStep('working')
+      setTimestamps(prev => ({
+        ...prev,
+        start: activeCheckin.startTime,
+        arrival: activeCheckin.arrivalTime
+      }))
+      return
+    }
+
+    // 2. Check local storage for Arrival state (Pre-backend)
+    const savedState = localStorage.getItem(`workflow_state_${selectedProject?.id}`)
+    if (savedState) {
+      try {
+        const parsed = JSON.parse(savedState)
+        // Only restore if it's recent (e.g., less than 24h)
+        const arrivalTime = new Date(parsed.arrival)
+        if (Date.now() - arrivalTime.getTime() < 24 * 60 * 60 * 1000) {
+          setTimestamps(prev => ({ ...prev, arrival: parsed.arrival }))
+          setWorkflowStep('arrived')
+        } else {
+          localStorage.removeItem(`workflow_state_${selectedProject?.id}`)
+        }
+      } catch (e) {
+        console.error('Failed to parse saved workflow state', e)
+      }
+    }
+  }, [activeCheckin, selectedProject, setWorkflowStep])
 
   if (isLoading) {
     return (
@@ -55,49 +93,73 @@ export const WorkflowScreen = ({
     </div>
   )
   
-  const formatTime = (iso?: string) => iso ? new Date(iso).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '--:--'
+  const formatTime = (iso?: string) => {
+    if (!iso) return '--:--'
+    // Ensure we treat the string as UTC if it doesn't have timezone info
+    // If backend sends "2023-12-03T12:29:00+00:00", new Date() handles it correctly.
+    // If backend sends "2023-12-03T12:29:00", we append Z to force UTC.
+    const dateStr = iso.endsWith('Z') || iso.includes('+') || iso.includes('-') ? iso : iso + 'Z'
+    return new Date(dateStr).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+  }
 
-  const handleWorkflowAction = (action: 'arrival' | 'start' | 'end') => {
+  const handleWorkflowAction = async (action: 'arrival' | 'start' | 'end') => {
     const now = new Date().toISOString()
     if (action === 'arrival') {
       setTimestamps({ ...timestamps, arrival: now })
       setWorkflowStep('arrived')
+      // Save local state
+      localStorage.setItem(`workflow_state_${selectedProject.id}`, JSON.stringify({
+        arrival: now,
+        step: 'arrived'
+      }))
     } else if (action === 'start') {
-      setTimestamps({ ...timestamps, start: now })
-      setWorkflowStep('working')
+      try {
+        await startCheckinMutation.mutateAsync({
+          project_id: Number(selectedProject.id),
+          start_time: now
+        })
+        setTimestamps({ ...timestamps, start: now })
+        setWorkflowStep('working')
+        // Clear local state as backend takes over
+        localStorage.removeItem(`workflow_state_${selectedProject.id}`)
+        toast.success('Check-in iniciado!')
+      } catch (error) {
+        toast.error('Erro ao iniciar check-in')
+      }
     } else if (action === 'end') {
       setTimestamps({ ...timestamps, end: now })
       setWorkflowStep('checkout')
     }
   }
 
-  const finishCheckin = () => {
+  const finishCheckin = async () => {
     if (!selectedProject || !timestamps.start || !timestamps.end) return
     
-    const start = new Date(timestamps.start)
-    const end = new Date(timestamps.end)
-    const diff = (end.getTime() - start.getTime()) / 1000 / 60 // minutes
-    const hours = Math.floor(diff / 60)
-    const mins = Math.floor(diff % 60)
-    const totalHours = `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`
-
-    const newCheckin: Checkin = {
-      id: Date.now().toString(),
-      projectId: selectedProject.id,
-      projectName: selectedProject.name,
-      userEmail: user?.email || '',
-      arrivalTime: timestamps.arrival,
-      startTime: timestamps.start,
-      endTime: timestamps.end,
-      totalHours,
-      activities: checkoutData.activities,
-      otherActivities: checkoutData.other,
-      observations: checkoutData.obs,
-      date: new Date().toISOString().split('T')[0]
+    if (!activeCheckin) {
+      // Fallback for offline/local flow if needed, or error
+      toast.error('Nenhum check-in ativo encontrado para finalizar.')
+      return
     }
 
-    addCheckin(newCheckin)
-    onNavigate('success')
+    try {
+      const allActivities = [...checkoutData.activities]
+      if (checkoutData.other) allActivities.push(checkoutData.other)
+
+      await stopCheckinMutation.mutateAsync({
+        id: Number(activeCheckin.id),
+        data: {
+          end_time: timestamps.end,
+          activities: allActivities,
+          observations: checkoutData.obs
+        }
+      })
+      
+      toast.success('Check-in finalizado com sucesso!')
+      await refreshData() // Refresh history
+      onNavigate('success')
+    } catch (error) {
+      toast.error('Erro ao finalizar check-in')
+    }
   }
 
   return (
@@ -131,8 +193,8 @@ export const WorkflowScreen = ({
         )}
         
         {workflowStep === 'arrived' && (
-          <Button onClick={() => handleWorkflowAction('start')} variant="success" icon={Play}>
-            Iniciar Serviço
+          <Button onClick={() => handleWorkflowAction('start')} variant="success" icon={Play} disabled={startCheckinMutation.isLoading}>
+            {startCheckinMutation.isLoading ? 'Iniciando...' : 'Iniciar Serviço'}
           </Button>
         )}
 
@@ -141,6 +203,7 @@ export const WorkflowScreen = ({
             <div className="text-center py-8">
               <p className="text-slate-500 mb-2">Serviço em andamento...</p>
               <Clock className="w-12 h-12 text-blue-900 mx-auto animate-spin-slow" />
+              {timestamps.start && <Timer startTime={timestamps.start} />}
             </div>
             <Button onClick={() => handleWorkflowAction('end')} variant="danger" icon={StopCircle}>
               Check-out / Finalizar
@@ -192,12 +255,49 @@ export const WorkflowScreen = ({
                 />
               </div>
             </Card>
-            <Button onClick={finishCheckin} variant="success" icon={CheckCircle}>
-              Finalizar Apontamento
+            <Button onClick={finishCheckin} variant="success" icon={CheckCircle} disabled={stopCheckinMutation.isLoading}>
+              {stopCheckinMutation.isLoading ? 'Finalizando...' : 'Finalizar Apontamento'}
             </Button>
           </div>
         )}
       </div>
     </div>
   )
+}
+
+const Timer = ({ startTime }: { startTime: string }) => {
+  const [elapsed, setElapsed] = useState<string>('00:00:00')
+
+  useEffect(() => {
+    const updateTimer = () => {
+      // Ensure startTime is treated as UTC if missing timezone info
+      const dateStr = startTime.endsWith('Z') || startTime.includes('+') || startTime.includes('-') ? startTime : startTime + 'Z'
+      const start = new Date(dateStr).getTime()
+      const now = Date.now()
+      const diff = now - start
+      
+      if (diff < 0) {
+        // If diff is negative, it might be due to clock skew or timezone issues.
+        // But if we force UTC, it should be correct assuming client clock is correct.
+        // Let's show 00:00:00 instead of negative.
+        setElapsed('00:00:00')
+        return
+      }
+
+      const hours = Math.floor(diff / (1000 * 60 * 60))
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000)
+
+      setElapsed(
+        `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
+      )
+    }
+
+    updateTimer() // Initial update
+    const interval = setInterval(updateTimer, 1000)
+
+    return () => clearInterval(interval)
+  }, [startTime])
+
+  return <p className="text-3xl font-mono font-bold text-slate-800 mt-2">{elapsed}</p>
 }

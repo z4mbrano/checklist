@@ -24,7 +24,101 @@ export const checkinKeys = {
   list: (page?: number, limit?: number) => 
     [...checkinKeys.lists(), { page, limit }] as const,
   byProject: (projectId: string) => 
-    [...checkinKeys.all, 'project', projectId] as const
+    [...checkinKeys.all, 'project', projectId] as const,
+  active: () => [...checkinKeys.all, 'active'] as const
+}
+
+/**
+ * Fetch active checkin
+ */
+export function useActiveCheckin() {
+  return useQuery({
+    queryKey: checkinKeys.active(),
+    queryFn: async (): Promise<Checkin | null> => {
+      try {
+        const apiCheckin = await checkinService.getActiveCheckin()
+        if (apiCheckin) {
+          const domainCheckin = CheckinMapper.toDomain(apiCheckin)
+          // Sync local storage
+          localStorage.setItem('activeCheckin', JSON.stringify({
+            id: domainCheckin.id,
+            projectId: domainCheckin.projectId,
+            startTime: domainCheckin.startTime
+          }))
+          return domainCheckin
+        }
+        
+        // API says no active checkin, clear local storage
+        localStorage.removeItem('activeCheckin')
+        return null
+      } catch (error) {
+        logger.error('Failed to fetch active checkin', error as Error)
+        
+        // Try recovery from localStorage if API fails
+        const stored = localStorage.getItem('activeCheckin')
+        if (stored) {
+          try {
+            const data = JSON.parse(stored)
+            return {
+              id: data.id,
+              projectId: data.projectId,
+              projectName: 'Carregando...',
+              startTime: data.startTime,
+              activities: [],
+              date: new Date().toISOString(),
+              userEmail: ''
+            } as Checkin
+          } catch (e) {
+            return null
+          }
+        }
+        return null
+      }
+    },
+    staleTime: 0,
+    refetchOnWindowFocus: true,
+    retry: false
+  })
+}
+
+/**
+ * Start checkin
+ */
+export function useStartCheckin() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (data: { project_id: number, start_time?: string }) => {
+      const apiCheckin = await checkinService.startCheckin(data)
+      return CheckinMapper.toDomain(apiCheckin)
+    },
+    onSuccess: (data) => {
+      queryClient.setQueryData(checkinKeys.active(), data)
+      // Backup to localStorage
+      localStorage.setItem('activeCheckin', JSON.stringify({
+        id: data.id,
+        projectId: data.projectId,
+        startTime: data.startTime
+      }))
+    }
+  })
+}
+
+/**
+ * Stop checkin
+ */
+export function useStopCheckin() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ id, data }: { id: number, data: { end_time?: string, activities: string[], observations?: string } }) => {
+      const apiCheckin = await checkinService.stopCheckin(id, data)
+      return CheckinMapper.toDomain(apiCheckin)
+    },
+    onSuccess: () => {
+      queryClient.setQueryData(checkinKeys.active(), null)
+      localStorage.removeItem('activeCheckin')
+      queryClient.invalidateQueries({ queryKey: checkinKeys.lists() })
+    }
+  })
 }
 
 /**

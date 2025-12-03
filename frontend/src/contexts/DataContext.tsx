@@ -5,11 +5,14 @@ import { ProjectMapper, CheckinMapper } from '../mappers/dataMappers'
 import { useAuth } from './AuthContext'
 import { toast } from 'react-hot-toast'
 import { logger } from '../utils/logger'
+import { useActiveCheckin } from '../hooks/useCheckins'
 
 interface DataContextType {
   projects: Project[]
   checkins: Checkin[]
+  activeCheckin: Checkin | null
   isLoading: boolean
+  isLoadingActiveCheckin: boolean
   refreshData: () => Promise<void>
   addProject: (project: Project) => Promise<Project | undefined> // Returns created project with DB ID
   updateProject: (project: Project) => void // Deprecated/Mock adapter
@@ -25,6 +28,8 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
   const [projects, setProjects] = useState<Project[]>([])
   const [checkins, setCheckins] = useState<Checkin[]>([])
   const [isLoading, setIsLoading] = useState(false)
+  
+  const { data: activeCheckin, isLoading: isLoadingActiveCheckin } = useActiveCheckin()
 
   const refreshData = useCallback(async () => {
     if (!isAuthenticated) return
@@ -139,7 +144,9 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     <DataContext.Provider value={{
       projects,
       checkins,
+      activeCheckin: activeCheckin || null,
       isLoading,
+      isLoadingActiveCheckin,
       refreshData,
       addProject,
       updateProject,

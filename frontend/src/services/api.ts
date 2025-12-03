@@ -146,11 +146,12 @@ class TaskService {
 
 class CheckinService {
   // Buscar check-in ativo do usuário
-  async getCurrentCheckin(): Promise<Checkin | null> {
+  async getActiveCheckin(): Promise<Checkin | null> {
     try {
-      const response = await api.get('/checkins/current')
+      const response = await api.get('/checkins/active')
       return response.data
     } catch (error: any) {
+      // If 404 or null returned
       if (error.response?.status === 404) {
         return null
       }
@@ -158,22 +159,32 @@ class CheckinService {
     }
   }
 
-  // Check-in de chegada no cliente
-  async arrival(data: CreateCheckinRequest): Promise<Checkin> {
-    const response = await api.post('/checkins/arrival', data)
+  // Iniciar check-in
+  async startCheckin(data: { project_id: number, start_time?: string }): Promise<Checkin> {
+    const response = await api.post('/checkins/start', data)
     return response.data
   }
 
-  // Check-in de início de serviço
-  async startService(data: StartServiceRequest): Promise<Checkin> {
-    const response = await api.post('/checkins/start-service', data)
+  // Parar check-in
+  async stopCheckin(checkinId: number, data: { end_time?: string, activities: string[], observations?: string }): Promise<Checkin> {
+    const response = await api.post(`/checkins/${checkinId}/stop`, data)
     return response.data
   }
 
-  // Check-out com atividades e observações
-  async checkout(data: CheckoutRequest): Promise<Checkin> {
-    const response = await api.post('/checkins/checkout', data)
-    return response.data
+  // Legacy / Desktop support
+  async arrival(data: { project_id: number, description?: string }): Promise<Checkin> {
+    return this.startCheckin({
+      project_id: data.project_id,
+      start_time: new Date().toISOString()
+    })
+  }
+
+  async checkout(data: { checkin_id: number, task_ids?: number[], description?: string }): Promise<Checkin> {
+    return this.stopCheckin(data.checkin_id, {
+      end_time: new Date().toISOString(),
+      activities: [], // Desktop flow might need update to support string activities or map tasks
+      observations: data.description
+    })
   }
 
   // Histórico de check-ins

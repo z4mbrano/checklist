@@ -1,6 +1,8 @@
 import React from 'react'
-import { LogOut, User as UserIcon, Play, History } from 'lucide-react'
+import { LogOut, User as UserIcon, Play, History, Clock } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import { useData } from '../contexts/DataContext'
 import { Card } from '../components/ui/Card'
 import { Screen } from '../types/mobile'
 
@@ -10,6 +12,8 @@ interface DashboardScreenProps {
 
 export const DashboardScreen = ({ onNavigate }: DashboardScreenProps) => {
   const { user, logout } = useAuth()
+  const { activeCheckin } = useData()
+  const navigate = useNavigate()
 
   return (
     <div className="p-6 max-w-5xl mx-auto space-y-8">
@@ -34,14 +38,32 @@ export const DashboardScreen = ({ onNavigate }: DashboardScreenProps) => {
       </header>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card onClick={() => onNavigate('selectProject')} className="p-8 flex flex-col items-center text-center gap-4 hover:border-blue-500 group">
-          <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center group-hover:bg-blue-900 transition-colors">
-            <Play className="text-blue-900 group-hover:text-white w-8 h-8" fill="currentColor" />
-          </div>
-          <div>
-            <h2 className="text-xl font-bold text-slate-800">Novo Check-in</h2>
-            <p className="text-slate-500">Iniciar atendimento em cliente</p>
-          </div>
+        <Card 
+          onClick={() => activeCheckin ? navigate(`/workflow/${activeCheckin.projectId}`) : onNavigate('selectProject')} 
+          className={`p-8 flex flex-col items-center text-center gap-4 group ${activeCheckin ? 'hover:border-amber-500 border-amber-200 bg-amber-50' : 'hover:border-blue-500'}`}
+        >
+          {activeCheckin ? (
+            <>
+              <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center group-hover:bg-amber-600 transition-colors">
+                <Clock className="text-amber-600 group-hover:text-white w-8 h-8" />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-slate-800">Check-in em Andamento</h2>
+                <p className="text-slate-500">Continuar atendimento em {activeCheckin.projectName}</p>
+                <p className="text-xs text-amber-700 mt-2">Iniciado às {new Date(activeCheckin.startTime || '').toLocaleTimeString()}</p>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center group-hover:bg-blue-900 transition-colors">
+                <Play className="text-blue-900 group-hover:text-white w-8 h-8" fill="currentColor" />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-slate-800">Novo Check-in</h2>
+                <p className="text-slate-500">Iniciar atendimento em cliente</p>
+              </div>
+            </>
+          )}
         </Card>
 
         <Card onClick={() => onNavigate('history')} className="p-8 flex flex-col items-center text-center gap-4 hover:border-emerald-500 group">
