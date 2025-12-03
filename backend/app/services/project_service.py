@@ -25,7 +25,7 @@ Performance Optimizations:
 - Cache-Aside pattern for read-heavy operations
 - Automatic cache invalidation on mutations
 """
-from typing import List, Optional
+from typing import List, Optional, Any
 from datetime import date
 
 from app.domain.entities.project import (
@@ -469,6 +469,18 @@ class ProjectService:
             List of client's projects
         """
         return self.repository.get_by_client(client_id)
+
+    def add_contributor(self, project_id: int, user_id: int) -> None:
+        """Add a contributor to a project."""
+        self.repository.add_contributor(project_id, user_id)
+        
+    def remove_contributor(self, project_id: int, user_id: int) -> None:
+        """Remove a contributor from a project."""
+        self.repository.remove_contributor(project_id, user_id)
+        
+    def get_contributors(self, project_id: int) -> List[Any]:
+        """Get contributors for a project."""
+        return self.repository.get_contributors(project_id)
     
     def get_project_statistics(self) -> dict:
         """

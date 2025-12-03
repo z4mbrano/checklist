@@ -18,10 +18,10 @@ Critical: This is the ONLY place where we map between:
 - app.domain.entities.project.Project (domain)
 - app.models.project.Project (ORM model)
 """
-from typing import List, Optional
+from typing import List, Optional, Any
 from datetime import date, datetime
 from sqlalchemy.orm import Session, joinedload
-from sqlalchemy import func
+from sqlalchemy import func, or_
 
 from app.domain.repositories.project_repository import (
     IProjectRepository,
@@ -94,6 +94,9 @@ class SQLAlchemyProjectRepository(IProjectRepository):
         if orm_project.responsavel:
             domain_project.responsible_user = orm_project.responsavel
             
+        if hasattr(orm_project, 'contributors'):
+            domain_project.contributors = orm_project.contributors
+
         return domain_project
     
     def _to_orm(self, domain_project: DomainProject) -> ORMProject:
@@ -247,7 +250,12 @@ class SQLAlchemyProjectRepository(IProjectRepository):
                 query = query.filter(ORMProject.cliente_id == client_id)
 
             if responsible_id:
-                query = query.filter(ORMProject.responsavel_id == responsible_id)
+                query = query.filter(
+                    or_(
+                        ORMProject.responsavel_id == responsible_id,
+                        ORMProject.contributors.any(id=responsible_id)
+                    )
+                )
             
             # Pagination
             orm_projects = query.offset(skip).limit(limit).all()
@@ -375,6 +383,60 @@ class SQLAlchemyProjectRepository(IProjectRepository):
         except Exception as e:
             logger.error("overdue_projects_query_failed", error=str(e))
             raise RepositoryError(f"Failed to get overdue projects: {str(e)}") from e
+
+    def add_contributor(self, project_id: int, user_id: int) -> None:
+        """Add a user as a contributor to a project."""
+        try:
+            project = self.session.query(ORMProject).get(project_id)
+            if not project:
+                raise ProjectNotFoundError(f"Project {project_id} not found")
+                
+            from app.models.user import User
+            user = self.session.query(User).get(user_id)
+            if not user:
+                raise RepositoryError(f"User {user_id} not found")
+            
+            # Check if already exists to avoid unique constraint violation
+            # Although SQLAlchemy usually handles this with set-like behavior, explicit check is safer
+            if user not in project.contributors:
+                project.contributors.append(user)
+                self.session.commit()
+        except Exception as e:
+            self.session.rollback()
+            # Check for integrity error (duplicate entry)
+            if "IntegrityError" in str(type(e)):
+                # Already added, ignore
+                return
+            raise RepositoryError(f"Failed to add contributor: {str(e)}") from e
+
+    def remove_contributor(self, project_id: int, user_id: int) -> None:
+        """Remove a user from project contributors."""
+        try:
+            project = self.session.query(ORMProject).get(project_id)
+            if not project:
+                raise ProjectNotFoundError(f"Project {project_id} not found")
+                
+            from app.models.user import User
+            user = self.session.query(User).get(user_id)
+            if not user:
+                raise RepositoryError(f"User {user_id} not found")
+                
+            if user in project.contributors:
+                project.contributors.remove(user)
+                self.session.commit()
+        except Exception as e:
+            self.session.rollback()
+            raise RepositoryError(f"Failed to remove contributor: {str(e)}") from e
+
+    def get_contributors(self, project_id: int) -> List[Any]:
+        """Get all contributors for a project."""
+        try:
+            project = self.session.query(ORMProject).options(joinedload(ORMProject.contributors)).get(project_id)
+            if not project:
+                raise ProjectNotFoundError(f"Project {project_id} not found")
+            return project.contributors
+        except Exception as e:
+            raise RepositoryError(f"Failed to get contributors: {str(e)}") from e
     
     def delete(self, project_id: int) -> bool:
         """Hard delete project (physical row removal).

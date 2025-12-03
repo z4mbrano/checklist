@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { ArrowLeft, FileText, Edit, History } from 'lucide-react'
+import { ArrowLeft, FileText, Edit, History, Users, Plus, Trash2 } from 'lucide-react'
 import { Card } from '../components/ui/Card'
 import { Modal } from '../components/ui/Modal'
 import { Input } from '../components/ui/Input'
@@ -9,7 +9,8 @@ import { useData } from '../contexts/DataContext'
 import { useAuth } from '../contexts/AuthContext'
 import { ACTIVITY_TAGS } from '../constants'
 import { useParams } from 'react-router-dom'
-import { useProject } from '../hooks/useProjects'
+import { useProject, useProjectContributors, useAddContributor, useRemoveContributor } from '../hooks/useProjects'
+import { userService } from '../services/api'
 
 // --- PRINT STYLES ---
 const PrintStyles = () => (
@@ -81,6 +82,37 @@ export const ProjectDetailScreen = ({
   const { data: fetchedProject, isLoading, error } = useProject(id || '')
   
   const selectedProject = fetchedProject || propProject
+
+  // Contributors logic
+  const { data: contributors, isLoading: isLoadingContributors } = useProjectContributors(selectedProject ? parseInt(selectedProject.id) : 0)
+  const addContributor = useAddContributor()
+  const removeContributor = useRemoveContributor()
+  const [isAddContributorModalOpen, setIsAddContributorModalOpen] = useState(false)
+  const [userSearch, setUserSearch] = useState('')
+  const [foundUsers, setFoundUsers] = useState<{id: number, label: string, subLabel: string}[]>([])
+
+  const handleSearchUsers = async (query: string) => {
+    setUserSearch(query)
+    if (query.length > 2) {
+      try {
+        const users = await userService.search(query)
+        setFoundUsers(users)
+      } catch (e) {
+        console.error(e)
+      }
+    } else {
+      setFoundUsers([])
+    }
+  }
+
+  const handleAddContributor = (userId: number) => {
+    if (selectedProject) {
+      addContributor.mutate({ projectId: parseInt(selectedProject.id), userId })
+      setIsAddContributorModalOpen(false)
+      setUserSearch('')
+      setFoundUsers([])
+    }
+  }
 
   if (isLoading) {
     return (
@@ -167,6 +199,52 @@ export const ProjectDetailScreen = ({
         </div>
       </header>
 
+      {/* Contributors Section */}
+      <Card className="mb-6 p-5 no-print">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+            <Users size={20} />
+            Equipe / Contribuintes
+          </h2>
+          {canEdit && (
+            <button 
+              onClick={() => setIsAddContributorModalOpen(true)}
+              className="p-2 rounded-full hover:bg-slate-100 text-blue-900 transition-colors"
+              title="Adicionar Contribuinte"
+            >
+              <Plus className="w-5 h-5" />
+            </button>
+          )}
+        </div>
+        
+        {isLoadingContributors ? (
+          <div className="text-center py-4">Carregando...</div>
+        ) : (
+          <div className="space-y-2">
+            {contributors && contributors.length > 0 ? (
+              contributors.map((contributor: any) => (
+                <div key={contributor.id} className="flex justify-between items-center p-2 bg-slate-50 rounded-lg">
+                  <div>
+                    <p className="font-medium text-slate-800">{contributor.name}</p>
+                    <p className="text-xs text-slate-500">{contributor.email}</p>
+                  </div>
+                  {canEdit && (
+                    <button 
+                      onClick={() => removeContributor.mutate({ projectId: parseInt(selectedProject!.id), userId: contributor.id })}
+                      className="text-red-500 hover:bg-red-50 p-1 rounded"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  )}
+                </div>
+              ))
+            ) : (
+              <p className="text-slate-500 text-sm italic">Nenhum contribuinte adicional.</p>
+            )}
+          </div>
+        )}
+      </Card>
+
       <div className="printable-area space-y-4 print:flex-none print:overflow-visible print:h-auto">
         {projectCheckins.length === 0 && (
           <div className="text-center py-12 text-slate-400">
@@ -222,6 +300,41 @@ export const ProjectDetailScreen = ({
           </Card>
         ))}
       </div>
+
+      {/* Add Contributor Modal */}
+      <Modal
+        isOpen={isAddContributorModalOpen}
+        onClose={() => setIsAddContributorModalOpen(false)}
+        title="Adicionar Contribuinte"
+      >
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Buscar Usuário</label>
+            <Input 
+              value={userSearch}
+              onChange={(e) => handleSearchUsers(e.target.value)}
+              placeholder="Nome ou email..."
+            />
+          </div>
+          
+          <div className="max-h-60 overflow-y-auto space-y-2">
+            {foundUsers.map(user => (
+              <div key={user.id} className="flex justify-between items-center p-2 hover:bg-slate-50 rounded border border-slate-100">
+                <div>
+                  <p className="font-medium">{user.label}</p>
+                  <p className="text-xs text-slate-500">{user.subLabel}</p>
+                </div>
+                <Button variant="outline" className="py-1 px-3 text-sm w-auto" onClick={() => handleAddContributor(user.id)}>
+                  Adicionar
+                </Button>
+              </div>
+            ))}
+            {userSearch.length > 2 && foundUsers.length === 0 && (
+              <p className="text-center text-slate-500 text-sm py-2">Nenhum usuário encontrado.</p>
+            )}
+          </div>
+        </div>
+      </Modal>
 
       {/* Edit Checkin Modal */}
       <EditCheckinModal 

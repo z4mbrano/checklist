@@ -98,6 +98,19 @@ class ProjectService {
     return response.data
   }
 
+  async addContributor(projectId: number, userId: number): Promise<void> {
+    await api.post(`/projects/${projectId}/contributors`, { user_id: userId })
+  }
+
+  async removeContributor(projectId: number, userId: number): Promise<void> {
+    await api.delete(`/projects/${projectId}/contributors/${userId}`)
+  }
+
+  async getContributors(projectId: number): Promise<any[]> {
+    const response = await api.get(`/projects/${projectId}/contributors`)
+    return response.data
+  }
+
   async delete(id: number): Promise<void> {
     await api.delete(`/projects/${id}`, { params: { force: true } })
   }

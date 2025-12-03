@@ -12,7 +12,7 @@ Business Rules Enforced:
 """
 from dataclasses import dataclass, field
 from datetime import date, datetime
-from typing import Optional, Any
+from typing import Optional, Any, List
 from enum import Enum
 
 
@@ -73,6 +73,7 @@ class Project:
     # Transient / Read-only relationships (populated by repository for DTOs)
     client: Optional[Any] = None
     responsible_user: Optional[Any] = None
+    contributors: List[Any] = field(default_factory=list)
     
     # Metadata
     observations: Optional[str] = None

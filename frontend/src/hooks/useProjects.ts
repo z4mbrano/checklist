@@ -209,3 +209,55 @@ export function useUpdateProject() {
     }
   })
 }
+
+/**
+ * Fetch project contributors
+ */
+export function useProjectContributors(projectId: number) {
+  return useQuery({
+    queryKey: [...projectKeys.detail(projectId.toString()), 'contributors'],
+    queryFn: async () => {
+      return projectService.getContributors(projectId)
+    },
+    enabled: !!projectId
+  })
+}
+
+/**
+ * Add contributor
+ */
+export function useAddContributor() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ projectId, userId }: { projectId: number, userId: number }) => 
+      projectService.addContributor(projectId, userId),
+    onSuccess: (_, { projectId }) => {
+      queryClient.invalidateQueries({ queryKey: [...projectKeys.detail(projectId.toString()), 'contributors'] })
+      toast.success('Contribuinte adicionado!')
+    },
+    onError: (error: any) => {
+      logger.error('Failed to add contributor', error as Error)
+      const message = error.response?.data?.detail || 'Erro ao adicionar contribuinte'
+      toast.error(message)
+    }
+  })
+}
+
+/**
+ * Remove contributor
+ */
+export function useRemoveContributor() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ projectId, userId }: { projectId: number, userId: number }) => 
+      projectService.removeContributor(projectId, userId),
+    onSuccess: (_, { projectId }) => {
+      queryClient.invalidateQueries({ queryKey: [...projectKeys.detail(projectId.toString()), 'contributors'] })
+      toast.success('Contribuinte removido!')
+    },
+    onError: (error) => {
+      logger.error('Failed to remove contributor', error as Error)
+      toast.error('Erro ao remover contribuinte')
+    }
+  })
+}

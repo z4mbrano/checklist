@@ -1,10 +1,20 @@
 """
 Project model for project management
 """
-from sqlalchemy import Column, Integer, String, Text, Date, DateTime, Enum, ForeignKey, func
+from sqlalchemy import Column, Integer, String, Text, Date, DateTime, Enum, ForeignKey, func, Table
 from sqlalchemy.orm import relationship
 from app.core.database import Base
 import enum
+
+
+# Association table for Project Contributors (Many-to-Many)
+project_contributors = Table(
+    'project_contributors',
+    Base.metadata,
+    Column('project_id', Integer, ForeignKey('projetos.id'), primary_key=True),
+    Column('user_id', Integer, ForeignKey('usuarios.id'), primary_key=True),
+    Column('created_at', DateTime(timezone=True), server_default=func.now())
+)
 
 
 class ProjectStatus(str, enum.Enum):
@@ -52,6 +62,7 @@ class Project(Base):
     # Relationships
     client = relationship("Client", back_populates="projetos")
     responsavel = relationship("User", back_populates="projetos")
+    contributors = relationship("User", secondary=project_contributors, backref="contributed_projects")
     checkins = relationship("Checkin", back_populates="projeto")
     
     def __repr__(self):

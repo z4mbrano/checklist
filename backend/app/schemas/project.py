@@ -8,7 +8,7 @@ Architecture Note:
 - Independent from ORM models (app.models.project)
 - Focused on API concerns: validation, serialization, documentation
 """
-from typing import Optional
+from typing import Optional, List
 from datetime import date, datetime
 from pydantic import BaseModel, Field, field_validator
 
@@ -16,6 +16,11 @@ from pydantic import BaseModel, Field, field_validator
 from app.domain.entities.project import ProjectStatus
 from app.schemas.client import ClientResponse
 from app.schemas.user import UserResponse
+
+
+class ContributorAddRequest(BaseModel):
+    """Request DTO for adding a contributor."""
+    user_id: int = Field(..., gt=0, description="User ID to add as contributor")
 
 
 class ProjectCreateRequest(BaseModel):
@@ -122,6 +127,10 @@ class ProjectResponse(BaseModel):
         validation_alias="responsavel",
         serialization_alias="responsible_user"
     )
+    contributors: Optional[List[UserResponse]] = Field(
+        default=None,
+        description="List of project contributors"
+    )
     
     # Computed fields
     is_active: bool = Field(description="True if project is currently active")
@@ -168,7 +177,8 @@ class ProjectResponse(BaseModel):
             created_at=project.created_at,
             updated_at=project.updated_at,
             client=project.client,
-            responsible_user=project.responsible_user
+            responsible_user=project.responsible_user,
+            contributors=project.contributors
         )
 
 

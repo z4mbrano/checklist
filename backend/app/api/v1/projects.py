@@ -28,8 +28,10 @@ from app.schemas.project import (
     ProjectUpdateRequest,
     ProjectStatusTransitionRequest,
     ProjectResponse,
-    ProjectStatisticsResponse
+    ProjectStatisticsResponse,
+    ContributorAddRequest
 )
+from app.schemas.user import UserResponse
 from app.domain.entities.project import (
     ProjectStatus,
     BusinessRuleViolationError,
@@ -395,3 +397,81 @@ async def get_overdue_projects(
     """
     projects = service.get_overdue_projects()
     return [ProjectResponse.from_domain(p) for p in projects]
+
+
+# ========================================
+# Contributor Endpoints
+# ========================================
+
+@router.post("/{project_id}/contributors", status_code=status.HTTP_201_CREATED)
+async def add_contributor(
+    project_id: int,
+    request: ContributorAddRequest,
+    service: ProjectService = Depends(get_project_service),
+    current_user: User = Depends(get_current_active_user)
+):
+    """
+    Add a contributor to a project.
+    
+    Permissions:
+    - Admin: Can add to any project
+    - Responsible: Can add to their own projects
+    """
+    # Check permissions
+    project = await service.get_project(project_id)
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+        
+    if not current_user.is_admin and project.responsible_user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized to manage contributors for this project")
+        
+    try:
+        service.add_contributor(project_id, request.user_id)
+        return {"message": "Contributor added successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.delete("/{project_id}/contributors/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def remove_contributor(
+    project_id: int,
+    user_id: int,
+    service: ProjectService = Depends(get_project_service),
+    current_user: User = Depends(get_current_active_user)
+):
+    """
+    Remove a contributor from a project.
+    
+    Permissions:
+    - Admin: Can remove from any project
+    - Responsible: Can remove from their own projects
+    """
+    # Check permissions
+    project = await service.get_project(project_id)
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+        
+    if not current_user.is_admin and project.responsible_user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized to manage contributors for this project")
+        
+    try:
+        service.remove_contributor(project_id, user_id)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.get("/{project_id}/contributors", response_model=List[UserResponse])
+async def get_contributors(
+    project_id: int,
+    service: ProjectService = Depends(get_project_service),
+    current_user: User = Depends(get_current_active_user)
+):
+    """
+    Get all contributors for a project.
+    """
+    project = await service.get_project(project_id)
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+        
+    contributors = service.get_contributors(project_id)
+    return [UserResponse.model_validate(u) for u in contributors]

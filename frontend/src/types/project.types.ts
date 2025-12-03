@@ -19,6 +19,7 @@ export interface Project {
   updated_at: string
   client?: Client
   responsible_user?: User
+  contributors?: User[]
 }
 
 export interface Task {
