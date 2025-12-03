@@ -64,6 +64,7 @@ const MobileAppContent = () => {
             <SelectProjectScreen
               onNavigate={(screen) => {
                 if (screen === 'dashboard') navigate('/menu')
+                if (screen === 'addProject') navigate('/projects/new')
               }}
               onSelectProject={(project: Project) => {
                 // go to workflow with project id
@@ -82,6 +83,7 @@ const MobileAppContent = () => {
               mode="add"
               onNavigate={(screen) => {
                 if (screen === 'dashboard') navigate('/menu')
+                if (screen === 'selectProject') navigate('/menu')
               }}
               onProjectSaved={(project: Project) => {
                 navigate(`/workflow/${project.id}`)
@@ -99,6 +101,7 @@ const MobileAppContent = () => {
               mode="edit"
               onNavigate={(screen) => {
                 if (screen === 'dashboard') navigate('/menu')
+                if (screen === 'projectDetail') navigate(-1)
               }}
             />
           </Private>
@@ -112,6 +115,7 @@ const MobileAppContent = () => {
             <WorkflowScreen
               onNavigate={(screen) => {
                 if (screen === 'dashboard') navigate('/menu')
+                if (screen === 'selectProject') navigate('/checkin/new')
               }}
             />
           </Private>
@@ -125,6 +129,7 @@ const MobileAppContent = () => {
             <HistoryScreen
               onNavigate={(screen) => {
                 if (screen === 'dashboard') navigate('/menu')
+                if (screen === 'addProject') navigate('/projects/new')
               }}
               onSelectProject={(project: Project) => {
                 navigate(`/projects/${project.id}`)
@@ -141,6 +146,7 @@ const MobileAppContent = () => {
             <ProjectDetailScreen
               onNavigate={(screen) => {
                 if (screen === 'dashboard') navigate('/menu')
+                if (screen === 'history') navigate('/history')
               }}
             />
           </Private>
