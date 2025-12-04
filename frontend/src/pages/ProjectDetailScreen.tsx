@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { ArrowLeft, FileText, Edit, History, Users, Plus, Trash2 } from 'lucide-react'
+import { ArrowLeft, FileText, Edit, History, Users, Plus, Trash2, FileSpreadsheet } from 'lucide-react'
 import { Card } from '../components/ui/Card'
 import { Modal } from '../components/ui/Modal'
 import { Input } from '../components/ui/Input'
@@ -146,6 +146,74 @@ export const ProjectDetailScreen = ({
   const handleExportPDF = () => {
     window.print()
   }
+const handleExportCSV = () => {
+    if (!projectCheckins.length) return
+
+    // CONFIGURAÇÃO: Usar ponto e vírgula para Excel Brasil
+    const SEPARATOR = ';' 
+
+    // Headers (Total: 6 colunas)
+    const headers = ['Data', 'Chegada', 'Início', 'Fim', 'Total Horas', 'Observações/Atividades']
+    
+    // Data rows
+    const rows = projectCheckins.map(c => {
+      const date = new Date(c.date).toLocaleDateString('pt-BR')
+      
+      const arrivalTime = c.arrivalTime 
+        ? new Date(c.arrivalTime.endsWith('Z') || c.arrivalTime.includes('+') || c.arrivalTime.includes('-') ? c.arrivalTime : c.arrivalTime + 'Z').toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'})
+        : ''
+        
+      const startTime = c.startTime 
+        ? new Date(c.startTime).toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'})
+        : ''
+        
+      const endTime = c.endTime 
+        ? new Date(c.endTime).toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'})
+        : ''
+        
+      // --- CORREÇÃO AQUI ---
+      // 1. Pegamos os textos crus
+      const rawActivities = (c.activities || []).join(', '); // Proteção caso venha null
+      const rawObservations = c.observations || '';
+
+      // 2. Juntamos tudo numa string só (já que você removeu a coluna separada)
+      // Exemplo de formato: "Atividades: X, Y. Obs: Z"
+      let combinedText = '';
+      if (rawActivities) combinedText += `Atividades: ${rawActivities}. `;
+      if (rawObservations) combinedText += `Obs: ${rawObservations}`;
+
+      // 3. Limpeza: Escapar aspas duplas (Excel usa "") e remover quebras de linha
+      const safeText = combinedText.replace(/"/g, '""').replace(/(\r\n|\n|\r)/gm, " ");
+      
+      // 4. Envolvemos em aspas para o CSV entender que é um campo de texto único
+      const finalColumn = `"${safeText}"`;
+
+      return [
+        date,
+        arrivalTime,
+        startTime,
+        endTime,
+        c.totalHours || '',
+        finalColumn // Agora enviamos apenas 1 coluna final combinada, totalizando 6
+      ].join(SEPARATOR)
+    })
+
+    // Combine headers and rows
+    const csvContent = [headers.join(SEPARATOR), ...rows].join('\n')
+    
+    // Create blob with BOM for Excel UTF-8 support
+    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' })
+    
+    // Create download link
+    const link = document.createElement('a')
+    const url = URL.createObjectURL(blob)
+    link.setAttribute('href', url)
+    link.setAttribute('download', `relatorio_${selectedProject.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.csv`)
+    link.style.visibility = 'hidden'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
 
   const handleUpdateCheckin = (checkinData: Partial<Checkin>) => {
     if (!editingCheckin) return
@@ -180,6 +248,13 @@ export const ProjectDetailScreen = ({
           </div>
         </div>
         <div className="flex gap-2 no-print">
+          <button 
+            onClick={handleExportCSV} 
+            className="p-2 hover:bg-green-50 rounded-full"
+            title="Exportar CSV (Excel)"
+          >
+            <FileSpreadsheet className="text-green-700" size={20} />
+          </button>
           <button 
             onClick={handleExportPDF} 
             className="p-2 hover:bg-blue-50 rounded-full"
