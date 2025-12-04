@@ -1,5 +1,5 @@
 import React from 'react'
-import { LogOut, User as UserIcon, Play, History, Clock, UserPlus } from 'lucide-react'
+import { LogOut, User as UserIcon, Play, History, Clock, UserPlus, Calendar } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useData } from '../contexts/DataContext'
@@ -73,6 +73,16 @@ export const DashboardScreen = ({ onNavigate }: DashboardScreenProps) => {
           <div>
             <h2 className="text-xl font-bold text-slate-800">Histórico & Projetos</h2>
             <p className="text-slate-500">Consultar atendimentos realizados</p>
+          </div>
+        </Card>
+
+        <Card onClick={() => navigate('/sprints')} className="p-8 flex flex-col items-center text-center gap-4 hover:border-indigo-500 group">
+          <div className="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center group-hover:bg-indigo-600 transition-colors">
+            <Calendar className="text-indigo-600 group-hover:text-white w-8 h-8" />
+          </div>
+          <div>
+            <h2 className="text-xl font-bold text-slate-800">Sprints</h2>
+            <p className="text-slate-500">Gerenciar tarefas e prazos</p>
           </div>
         </Card>
 

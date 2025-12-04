@@ -11,6 +11,7 @@ import { HistoryScreen } from './HistoryScreen'
 import { ProjectDetailScreen } from './ProjectDetailScreen'
 import { SuccessScreen } from './SuccessScreen'
 import { UserRegistrationScreen } from './admin/UserRegistrationScreen'
+import { SprintsScreen } from './sprints/SprintsScreen'
 import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom'
 
 const MobileAppContent = () => {
@@ -64,6 +65,17 @@ const MobileAppContent = () => {
         element={(
           <Private>
             <UserRegistrationScreen />
+          </Private>
+        )}
+      />
+
+      <Route
+        path="/sprints"
+        element={(
+          <Private>
+            <SprintsScreen onNavigate={(screen) => {
+              if (screen === 'dashboard') navigate('/menu')
+            }} />
           </Private>
         )}
       />

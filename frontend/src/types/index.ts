@@ -3,6 +3,7 @@ export * from './auth.types'
 export * from './client.types'
 export * from './project.types'
 export * from './checkin.types'
+export * from './sprint.types'
 
 // API Response wrapper
 export interface ApiResponse<T> {
