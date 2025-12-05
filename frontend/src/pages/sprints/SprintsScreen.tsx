@@ -115,8 +115,17 @@ export const SprintsScreen: React.FC<SprintsScreenProps> = ({ onNavigate }) => {
     }
   };
 
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case SprintStatus.PLANNED: return 'Planejado';
+      case SprintStatus.IN_PROGRESS: return 'Em Andamento';
+      case SprintStatus.COMPLETED: return 'Concluído';
+      default: return status;
+    }
+  };
+
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6 space-y-6 max-w-5xl mx-auto">
       {viewMode === 'projects' ? (
         <>
           <div className="flex items-center gap-4 mb-6">
@@ -170,6 +179,7 @@ export const SprintsScreen: React.FC<SprintsScreenProps> = ({ onNavigate }) => {
             
             <Button 
               onClick={() => setIsCreateModalOpen(true)}
+              className="!w-[200px] px-4 py-2"
             >
               <Plus className="w-4 h-4 mr-2" />
               Novo Sprint
@@ -201,7 +211,7 @@ export const SprintsScreen: React.FC<SprintsScreenProps> = ({ onNavigate }) => {
                         sprint.status === SprintStatus.IN_PROGRESS ? 'bg-blue-100 text-blue-800' :
                         'bg-gray-100 text-gray-800'
                       }`}>
-                        {(sprint.status || 'planned').replace('_', ' ')}
+                        {getStatusLabel(sprint.status || 'planned')}
                       </span>
                       <button onClick={() => handleDeleteSprint(sprint.id)} className="text-red-500 hover:text-red-700">
                         <Trash2 className="w-4 h-4" />
@@ -235,9 +245,9 @@ export const SprintsScreen: React.FC<SprintsScreenProps> = ({ onNavigate }) => {
                       value={sprint.status}
                       onChange={(e) => updateSprintStatus(sprint.id, { status: e.target.value as SprintStatus })}
                     >
-                      <option value={SprintStatus.PLANNED}>Planned</option>
-                      <option value={SprintStatus.IN_PROGRESS}>In Progress</option>
-                      <option value={SprintStatus.COMPLETED}>Completed</option>
+                      <option value={SprintStatus.PLANNED}>Planejado</option>
+                      <option value={SprintStatus.IN_PROGRESS}>Em Andamento</option>
+                      <option value={SprintStatus.COMPLETED}>Concluído</option>
                     </select>
                   </div>
                 </Card>
@@ -296,16 +306,24 @@ export const SprintsScreen: React.FC<SprintsScreenProps> = ({ onNavigate }) => {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Tarefas</label>
-            <div className="flex gap-2 mb-2">
-              <Input
-                value={newTaskDescription}
-                onChange={e => setNewTaskDescription(e.target.value)}
-                placeholder="Adicionar tarefa..."
-                onKeyPress={e => e.key === 'Enter' && (e.preventDefault(), handleAddTask())}
-              />
-              <Button type="button" onClick={handleAddTask} variant="outline">
-                <Plus className="w-4 h-4" />
-              </Button>
+            <div className="flex items-center gap-2 mb-2">
+              <div className="flex-1">
+                <input
+                  className="block w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                  value={newTaskDescription}
+                  onChange={e => setNewTaskDescription(e.target.value)}
+                  placeholder="Adicionar tarefa..."
+                  onKeyPress={e => e.key === 'Enter' && (e.preventDefault(), handleAddTask())}
+                />
+              </div>
+              <button 
+                type="button"
+                className="w-10 h-10 flex items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-blue-600 transition-all"
+                onClick={handleAddTask}
+                title="Adicionar Tarefa"
+              >
+                <Plus size={20} />
+              </button>
             </div>
             <div className="space-y-2 max-h-40 overflow-y-auto">
               {formData.tasks?.map((task, index) => (

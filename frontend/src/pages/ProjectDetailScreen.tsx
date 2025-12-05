@@ -364,14 +364,16 @@ const handleExportCSV = () => {
               </p>
             )}
 
-            <div className="mt-4 pt-3 border-t border-slate-100 flex justify-end no-print">
-              <button 
-                onClick={() => setEditingCheckin(c)}
-                className="text-sm font-bold text-blue-900 flex items-center gap-1 hover:underline"
-              >
-                <Edit size={14} /> Editar
-              </button>
-            </div>
+            {(user?.isAdmin || user?.role === 'admin') && (
+              <div className="mt-4 pt-3 border-t border-slate-100 flex justify-end no-print">
+                <button 
+                  onClick={() => setEditingCheckin(c)}
+                  className="text-sm font-bold text-blue-900 flex items-center gap-1 hover:underline"
+                >
+                  <Edit size={14} /> Editar
+                </button>
+              </div>
+            )}
           </Card>
         ))}
       </div>
