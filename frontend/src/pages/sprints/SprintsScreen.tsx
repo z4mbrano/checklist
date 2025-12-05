@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
-import { Plus, Calendar, CheckCircle, Circle, Trash2, MoreVertical, X, ArrowLeft } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { Plus, Calendar, CheckCircle, Circle, Trash2, MoreVertical, X, ArrowLeft, Folder, ChevronRight } from 'lucide-react';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Modal } from '../../components/ui/Modal';
 import { Input } from '../../components/ui/Input';
+import { SearchBar } from '../../components/ui/SearchBar';
 import { useSprints } from '../../hooks/useSprints';
 import { SprintStatus, CreateSprint, Sprint } from '../../types/sprint.types';
 import { useData } from '../../contexts/DataContext';
@@ -20,7 +21,10 @@ interface SprintsScreenProps {
 
 export const SprintsScreen: React.FC<SprintsScreenProps> = ({ onNavigate }) => {
   const { projects } = useData();
+  const [viewMode, setViewMode] = useState<'projects' | 'sprints'>('projects');
   const [selectedProjectId, setSelectedProjectId] = useState<number | undefined>(undefined);
+  const [searchTerm, setSearchTerm] = useState('');
+  
   const { sprints, loading, createSprint, updateSprintStatus, updateSprintTask, deleteSprint } = useSprints(selectedProjectId);
   
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -33,10 +37,30 @@ export const SprintsScreen: React.FC<SprintsScreenProps> = ({ onNavigate }) => {
     tasks: []
   });
 
-  const handleProjectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const val = e.target.value;
-    setSelectedProjectId(val ? Number(val) : undefined);
+  const filteredProjects = useMemo(() => {
+    if (!searchTerm.trim()) return projects;
+    const term = searchTerm.toLowerCase();
+    return projects.filter(p => 
+      p.name.toLowerCase().includes(term) ||
+      (p.client && p.client.toLowerCase().includes(term))
+    );
+  }, [projects, searchTerm]);
+
+  const handleSelectProject = (projectId: number) => {
+    setSelectedProjectId(projectId);
+    setViewMode('sprints');
   };
+
+  const handleBack = () => {
+    if (viewMode === 'sprints') {
+      setViewMode('projects');
+      setSelectedProjectId(undefined);
+    } else {
+      onNavigate('dashboard');
+    }
+  };
+
+  const selectedProject = projects.find(p => Number(p.id) === selectedProjectId);
 
   const handleAddTask = () => {
     if (!newTaskDescription.trim()) return;
@@ -93,107 +117,144 @@ export const SprintsScreen: React.FC<SprintsScreenProps> = ({ onNavigate }) => {
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex justify-between items-center">
-        <div className="flex items-center gap-4">
-          <button onClick={() => onNavigate('dashboard')} className="p-2 hover:bg-slate-200 rounded-full">
-            <ArrowLeft size={24} className="text-slate-700" />
-          </button>
-          <h1 className="text-2xl font-bold text-slate-800">Gestão de Sprints</h1>
-        </div>
-        <div className="flex gap-4">
-          <select 
-            className="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-            value={selectedProjectId || ''}
-            onChange={handleProjectChange}
-          >
-            <option value="">Select Project</option>
-            {projects.map(p => (
-              <option key={p.id} value={p.id}>{p.name}</option>
-            ))}
-          </select>
-          
-          <Button 
-            onClick={() => setIsCreateModalOpen(true)}
-            disabled={!selectedProjectId}
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            New Sprint
-          </Button>
-        </div>
-      </div>
+      {viewMode === 'projects' ? (
+        <>
+          <div className="flex items-center gap-4 mb-6">
+            <button onClick={() => onNavigate('dashboard')} className="p-2 hover:bg-slate-200 rounded-full">
+              <ArrowLeft size={24} className="text-slate-700" />
+            </button>
+            <h1 className="text-2xl font-bold text-slate-800">Gestão de Sprints</h1>
+          </div>
 
-      {loading ? (
-        <div>Loading...</div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {sprints.map(sprint => (
-            <Card key={sprint.id} className="p-4 flex flex-col h-full">
-              <div className="flex justify-between items-start mb-4">
+          <SearchBar 
+            value={searchTerm} 
+            onChange={setSearchTerm} 
+            placeholder="Buscar projeto..." 
+          />
+
+          <div className="space-y-3 mt-6">
+            {filteredProjects.length === 0 && (
+              <div className="text-center py-12 text-slate-400">
+                <Folder size={48} className="mx-auto mb-4 opacity-50" />
+                <p>Nenhum projeto encontrado</p>
+              </div>
+            )}
+            
+            {filteredProjects.map(p => (
+              <Card 
+                key={p.id} 
+                onClick={() => handleSelectProject(Number(p.id))} 
+                className="p-5 flex items-center justify-between group cursor-pointer hover:shadow-md transition-shadow"
+              >
                 <div>
-                  <h3 className="font-semibold text-lg">{sprint.title}</h3>
-                  <div className="flex items-center text-sm text-gray-500 mt-1">
-                    <Calendar className="w-4 h-4 mr-1" />
-                    {safeFormat(sprint.start_date, 'MMM d')} - {safeFormat(sprint.end_date, 'MMM d, yyyy')}
-                  </div>
+                  <h3 className="font-bold text-slate-800">{p.name}</h3>
+                  <p className="text-sm text-slate-500">{p.client}</p>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                    sprint.status === SprintStatus.COMPLETED ? 'bg-green-100 text-green-800' :
-                    sprint.status === SprintStatus.IN_PROGRESS ? 'bg-blue-100 text-blue-800' :
-                    'bg-gray-100 text-gray-800'
-                  }`}>
-                    {(sprint.status || 'planned').replace('_', ' ')}
-                  </span>
-                  <button onClick={() => handleDeleteSprint(sprint.id)} className="text-red-500 hover:text-red-700">
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
+                <ChevronRight className="text-slate-300 group-hover:text-blue-900" />
+              </Card>
+            ))}
+          </div>
+        </>
+      ) : (
+        <>
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-4">
+              <button onClick={handleBack} className="p-2 hover:bg-slate-200 rounded-full">
+                <ArrowLeft size={24} className="text-slate-700" />
+              </button>
+              <div>
+                <h1 className="text-2xl font-bold text-slate-800">Sprints</h1>
+                <p className="text-sm text-slate-500">{selectedProject?.name}</p>
               </div>
+            </div>
+            
+            <Button 
+              onClick={() => setIsCreateModalOpen(true)}
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Novo Sprint
+            </Button>
+          </div>
 
-              <div className="flex-1 space-y-2 mb-4">
-                {(sprint.tasks || []).map(task => (
-                  <div key={task.id} className="flex items-start gap-2 group">
-                    <button 
-                      onClick={() => toggleTask(sprint, task.id, task.is_completed)}
-                      className="mt-0.5 text-gray-400 hover:text-blue-500"
+          {loading ? (
+            <div>Carregando...</div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {sprints.length === 0 && (
+                <div className="col-span-full text-center py-12 text-slate-400">
+                  <p>Nenhum sprint encontrado para este projeto.</p>
+                </div>
+              )}
+              {sprints.map(sprint => (
+                <Card key={sprint.id} className="p-4 flex flex-col h-full">
+                  <div className="flex justify-between items-start mb-4">
+                    <div>
+                      <h3 className="font-semibold text-lg">{sprint.title}</h3>
+                      <div className="flex items-center text-sm text-gray-500 mt-1">
+                        <Calendar className="w-4 h-4 mr-1" />
+                        {safeFormat(sprint.start_date, 'MMM d')} - {safeFormat(sprint.end_date, 'MMM d, yyyy')}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        sprint.status === SprintStatus.COMPLETED ? 'bg-green-100 text-green-800' :
+                        sprint.status === SprintStatus.IN_PROGRESS ? 'bg-blue-100 text-blue-800' :
+                        'bg-gray-100 text-gray-800'
+                      }`}>
+                        {(sprint.status || 'planned').replace('_', ' ')}
+                      </span>
+                      <button onClick={() => handleDeleteSprint(sprint.id)} className="text-red-500 hover:text-red-700">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="flex-1 space-y-2 mb-4">
+                    {(sprint.tasks || []).map(task => (
+                      <div key={task.id} className="flex items-start gap-2 group">
+                        <button 
+                          onClick={() => toggleTask(sprint, task.id, task.is_completed)}
+                          className="mt-0.5 text-gray-400 hover:text-blue-500"
+                        >
+                          {task.is_completed ? (
+                            <CheckCircle className="w-5 h-5 text-green-500" />
+                          ) : (
+                            <Circle className="w-5 h-5" />
+                          )}
+                        </button>
+                        <span className={`text-sm ${task.is_completed ? 'text-gray-400 line-through' : 'text-gray-700'}`}>
+                          {task.description}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="pt-4 border-t mt-auto">
+                    <select
+                      className="w-full text-sm border-gray-300 rounded-md"
+                      value={sprint.status}
+                      onChange={(e) => updateSprintStatus(sprint.id, { status: e.target.value as SprintStatus })}
                     >
-                      {task.is_completed ? (
-                        <CheckCircle className="w-5 h-5 text-green-500" />
-                      ) : (
-                        <Circle className="w-5 h-5" />
-                      )}
-                    </button>
-                    <span className={`text-sm ${task.is_completed ? 'text-gray-400 line-through' : 'text-gray-700'}`}>
-                      {task.description}
-                    </span>
+                      <option value={SprintStatus.PLANNED}>Planned</option>
+                      <option value={SprintStatus.IN_PROGRESS}>In Progress</option>
+                      <option value={SprintStatus.COMPLETED}>Completed</option>
+                    </select>
                   </div>
-                ))}
-              </div>
-
-              <div className="pt-4 border-t mt-auto">
-                <select
-                  className="w-full text-sm border-gray-300 rounded-md"
-                  value={sprint.status}
-                  onChange={(e) => updateSprintStatus(sprint.id, { status: e.target.value as SprintStatus })}
-                >
-                  <option value={SprintStatus.PLANNED}>Planned</option>
-                  <option value={SprintStatus.IN_PROGRESS}>In Progress</option>
-                  <option value={SprintStatus.COMPLETED}>Completed</option>
-                </select>
-              </div>
-            </Card>
-          ))}
-        </div>
+                </Card>
+              ))}
+            </div>
+          )}
+        </>
       )}
 
       <Modal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
-        title="Create New Sprint"
+        title="Criar Novo Sprint"
       >
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700">Title</label>
+            <label className="block text-sm font-medium text-gray-700">Título</label>
             <Input
               value={formData.title}
               onChange={e => setFormData({...formData, title: e.target.value})}
@@ -204,7 +265,7 @@ export const SprintsScreen: React.FC<SprintsScreenProps> = ({ onNavigate }) => {
           
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700">Start Date</label>
+              <label className="block text-sm font-medium text-gray-700">Data Início</label>
               <Input
                 type="date"
                 value={formData.start_date}
@@ -213,7 +274,7 @@ export const SprintsScreen: React.FC<SprintsScreenProps> = ({ onNavigate }) => {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">End Date</label>
+              <label className="block text-sm font-medium text-gray-700">Data Fim</label>
               <Input
                 type="date"
                 value={formData.end_date}
@@ -224,7 +285,7 @@ export const SprintsScreen: React.FC<SprintsScreenProps> = ({ onNavigate }) => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">Observation</label>
+            <label className="block text-sm font-medium text-gray-700">Observação</label>
             <textarea
               className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
               rows={3}
@@ -234,12 +295,12 @@ export const SprintsScreen: React.FC<SprintsScreenProps> = ({ onNavigate }) => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Tasks</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Tarefas</label>
             <div className="flex gap-2 mb-2">
               <Input
                 value={newTaskDescription}
                 onChange={e => setNewTaskDescription(e.target.value)}
-                placeholder="Add a task..."
+                placeholder="Adicionar tarefa..."
                 onKeyPress={e => e.key === 'Enter' && (e.preventDefault(), handleAddTask())}
               />
               <Button type="button" onClick={handleAddTask} variant="outline">
@@ -260,10 +321,10 @@ export const SprintsScreen: React.FC<SprintsScreenProps> = ({ onNavigate }) => {
 
           <div className="flex justify-end gap-2 pt-4">
             <Button type="button" variant="outline" onClick={() => setIsCreateModalOpen(false)}>
-              Cancel
+              Cancelar
             </Button>
             <Button type="submit">
-              Create Sprint
+              Criar Sprint
             </Button>
           </div>
         </form>
