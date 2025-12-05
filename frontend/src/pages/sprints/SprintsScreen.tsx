@@ -202,7 +202,7 @@ export const SprintsScreen: React.FC<SprintsScreenProps> = ({ onNavigate }) => {
                       <h3 className="font-semibold text-lg">{sprint.title}</h3>
                       <div className="flex items-center text-sm text-gray-500 mt-1">
                         <Calendar className="w-4 h-4 mr-1" />
-                        {safeFormat(sprint.start_date, 'MMM d')} - {safeFormat(sprint.end_date, 'MMM d, yyyy')}
+                        {safeFormat(sprint.start_date, 'dd/MM/yyyy')} - {safeFormat(sprint.end_date, 'dd/MM/yyyy')}
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
