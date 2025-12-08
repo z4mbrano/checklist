@@ -26,10 +26,24 @@ Este projeto está configurado para ser implantado no Vercel como um monorepo (F
    | `DB_NAME` | Nome do Banco | `vrdsolution01` |
    | `DB_PORT` | Porta do MySQL | `3306` |
    | `SECRET_KEY` | Chave secreta para JWT | (Gere uma string aleatória segura) |
+   | `ACCESS_TOKEN_EXPIRE_MINUTES` | Expiração do Token (min) | `60` |
+   | `REFRESH_TOKEN_EXPIRE_DAYS` | Expiração do Refresh (dias) | `7` |
    | `ENVIRONMENT` | Ambiente | `production` |
+   | `DEBUG` | Modo Debug | `False` |
    | `ALLOWED_ORIGINS` | Origens permitidas (CORS) | `["https://seu-projeto.vercel.app"]` |
+   | `UPLOAD_DIR` | Diretório de Uploads (Temp) | `/tmp` (Vercel é read-only, use S3 idealmente) |
+   | `MAX_FILE_SIZE` | Tamanho máx arquivo (bytes) | `10485760` |
+   | `CELERY_BROKER_URL` | URL do Redis (Opcional) | `redis://...` (Necessário Redis externo) |
+   | `CELERY_RESULT_BACKEND` | URL do Redis (Opcional) | `redis://...` |
+   | `SMTP_SERVER` | Servidor SMTP (Opcional) | `smtp.gmail.com` |
+   | `SMTP_PORT` | Porta SMTP (Opcional) | `587` |
+   | `SMTP_USERNAME` | Usuário SMTP (Opcional) | `email@exemplo.com` |
+   | `SMTP_PASSWORD` | Senha SMTP (Opcional) | `senha` |
+   | `DEFAULT_PAGE_SIZE` | Paginação Padrão | `20` |
+   | `MAX_PAGE_SIZE` | Paginação Máxima | `100` |
 
    *Nota: Ajuste o `ALLOWED_ORIGINS` após o primeiro deploy, quando você tiver a URL final do Vercel.*
+   *Nota 2: O Vercel tem sistema de arquivos efêmero (read-only exceto /tmp). Uploads de arquivos não persistirão. Recomenda-se usar AWS S3 ou similar para produção.*
 
 3. **Deploy:**
    - Clique em "Deploy".
