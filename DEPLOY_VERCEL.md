@@ -31,6 +31,7 @@ Este projeto está configurado para ser implantado no Vercel como um monorepo (F
    | `ENVIRONMENT` | Ambiente | `production` |
    | `DEBUG` | Modo Debug | `False` |
    | `ALLOWED_ORIGINS` | Origens permitidas (CORS) | `["https://seu-projeto.vercel.app"]` |
+   | `REDIS_CACHE_ENABLED` | Habilitar Redis | `False` (Defina como False se não tiver Redis) |
    | `UPLOAD_DIR` | Diretório de Uploads (Temp) | `/tmp` (Vercel é read-only, use S3 idealmente) |
    | `MAX_FILE_SIZE` | Tamanho máx arquivo (bytes) | `10485760` |
    | `CELERY_BROKER_URL` | URL do Redis (Opcional) | `redis://...` (Necessário Redis externo) |

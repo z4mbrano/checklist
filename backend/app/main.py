@@ -86,6 +86,38 @@ async def health_check():
     logger.info("health_check_requested", status="healthy", version=settings.version)
     return {"status": "healthy", "version": settings.version}
 
+from sqlalchemy import text
+from app.core.database import engine
+
+@app.get("/api/debug-db")
+async def debug_db():
+    """
+    Endpoint de diagnóstico para testar conexão com o banco de dados.
+    Retorna erro detalhado se falhar.
+    """
+    try:
+        # Tenta conectar e executar uma query simples
+        with engine.connect() as connection:
+            result = connection.execute(text("SELECT 1"))
+            return {
+                "status": "success", 
+                "message": "Conexão com banco de dados estabelecida com sucesso!",
+                "result": result.scalar(),
+                # Retorna a URL mascarada para conferência
+                "db_host": settings.db_host,
+                "db_user": settings.db_user,
+                "db_port": settings.db_port,
+                "db_name": settings.db_name
+            }
+    except Exception as e:
+        import traceback
+        return {
+            "status": "error", 
+            "message": str(e), 
+            "type": type(e).__name__,
+            "traceback": traceback.format_exc()
+        }
+
 
 if __name__ == "__main__":
     import uvicorn
