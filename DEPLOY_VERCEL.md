@@ -49,13 +49,28 @@ Este projeto está configurado para ser implantado no Vercel como um monorepo (F
    - Clique em "Deploy".
    - O Vercel irá construir o Frontend (Vite) e configurar o Backend (Python Serverless Function).
 
-## Estrutura de Deploy
+## Estrutura de Deploy (Atualizada)
 
-- **Frontend:** Arquivos estáticos servidos na raiz `/`.
-- **Backend:** API servida em `/api/...`.
-- **Configuração:** O arquivo `vercel.json` na raiz controla o roteamento e o build.
+- **Frontend:** O Vercel detecta automaticamente o Vite na raiz (ou na pasta frontend se configurado).
+- **Backend:** A pasta `/api` contém o ponto de entrada `index.py` que o Vercel reconhece automaticamente como Serverless Function.
+- **Configuração:** O arquivo `vercel.json` agora usa `rewrites` para direcionar o tráfego.
 
 ## Solução de Problemas
 
-- **Erro 404 na API:** Verifique se a rota começa com `/api/`. O backend só responde neste caminho.
-- **Erro de Banco de Dados:** Verifique se o banco de dados (KingHost) aceita conexões externas. Pode ser necessário liberar o IP do Vercel (o que é difícil pois muda sempre) ou usar um banco de dados na nuvem (PlanetScale, Supabase, etc) ou configurar o banco atual para aceitar `%` (qualquer IP), o que tem riscos de segurança.
+- **Erro 404 na API:** O backend agora responde em `/api/...`.
+- **Erro 404 no Frontend:** Se o frontend não carregar, verifique se o "Output Directory" nas configurações do Vercel está definido como `frontend/dist` (já que o `package.json` está dentro de `frontend`).
+
+**Importante:** Nas configurações do projeto no Vercel (Settings -> General):
+- **Root Directory:** `frontend` (Isso fará o Vercel focar no React).
+- **Build Command:** `npm run build`
+- **Output Directory:** `dist`
+- **Install Command:** `npm install`
+
+*Mas espere!* Se mudarmos o Root Directory para `frontend`, o Vercel não verá a pasta `api` na raiz.
+**A melhor abordagem para Monorepo no Vercel:**
+1. Mantenha o **Root Directory** como `./` (raiz do repo).
+2. **Build Command:** `cd frontend && npm install && npm run build`
+3. **Output Directory:** `frontend/dist`
+4. **Install Command:** `echo 'Skipping install at root'` (ou instale dependências globais se precisar).
+
+O `vercel.json` na raiz cuidará de servir o `frontend/dist` para as rotas do site e a pasta `api` para o backend.
