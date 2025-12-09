@@ -33,7 +33,7 @@ class Settings(BaseSettings):
         description="Redis connection URL for caching"
     )
     REDIS_CACHE_ENABLED: bool = Field(
-        default=True,
+        default=False,
         env="REDIS_CACHE_ENABLED",
         description="Enable/disable Redis caching (disable for local dev without Redis)"
     )
