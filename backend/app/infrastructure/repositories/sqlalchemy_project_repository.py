@@ -445,57 +445,54 @@ class SQLAlchemyProjectRepository(IProjectRepository):
         Business requirement now demands permanent removal.
         """
         try:
-            # First, delete related records to avoid foreign key constraints
+            from sqlalchemy import text
             
-            # 1. Delete project contributors (association table)
-            from app.models.project import project_contributors
+            # Use raw SQL for cascading deletes to ensure all dependencies are removed
+            # and to avoid ORM overhead/complexity with multiple relationships.
+            
+            # 1. Delete project contributors
             self.session.execute(
-                project_contributors.delete().where(project_contributors.c.project_id == project_id)
+                text("DELETE FROM project_contributors WHERE project_id = :pid"), 
+                {"pid": project_id}
             )
             
-            # 2. Delete checkins associated with the project
-            from app.models.checkin import Checkin, TarefaExecutada
-            from app.models.attachment import Attachment
+            # 2. Delete attachments linked to project checkins
+            self.session.execute(
+                text("DELETE FROM anexos WHERE checkin_id IN (SELECT id FROM checkins WHERE projeto_id = :pid)"),
+                {"pid": project_id}
+            )
             
-            # Get checkin IDs
-            checkins = self.session.query(Checkin.id).filter(Checkin.projeto_id == project_id).all()
-            checkin_ids = [c.id for c in checkins]
+            # 3. Delete executed tasks linked to project checkins
+            self.session.execute(
+                text("DELETE FROM tarefas_executadas WHERE checkin_id IN (SELECT id FROM checkins WHERE projeto_id = :pid)"),
+                {"pid": project_id}
+            )
             
-            if checkin_ids:
-                # Delete related records (Attachments and TarefaExecutada)
-                # These need to be deleted manually because we are using bulk delete for checkins
-                # and the database might not have ON DELETE CASCADE configured
-                
-                # Delete Attachments
-                self.session.query(Attachment).filter(Attachment.checkin_id.in_(checkin_ids)).delete(synchronize_session=False)
-                
-                # Delete TarefaExecutada
-                self.session.query(TarefaExecutada).filter(TarefaExecutada.checkin_id.in_(checkin_ids)).delete(synchronize_session=False)
-
-            # Now it's safe to delete checkins
-            self.session.query(Checkin).filter(Checkin.projeto_id == project_id).delete(synchronize_session=False)
+            # 4. Delete checkins
+            self.session.execute(
+                text("DELETE FROM checkins WHERE projeto_id = :pid"),
+                {"pid": project_id}
+            )
             
-            # 3. Delete sprint tasks associated with sprints of the project
-            from app.models.sprint import Sprint, SprintTask
+            # 5. Delete sprint tasks linked to project sprints
+            self.session.execute(
+                text("DELETE FROM sprint_tasks WHERE sprint_id IN (SELECT id FROM sprints WHERE project_id = :pid)"),
+                {"pid": project_id}
+            )
             
-            # Get sprint IDs to delete their tasks
-            sprints = self.session.query(Sprint.id).filter(Sprint.project_id == project_id).all()
-            sprint_ids = [s.id for s in sprints]
-            
-            if sprint_ids:
-                self.session.query(SprintTask).filter(SprintTask.sprint_id.in_(sprint_ids)).delete(synchronize_session=False)
-            
-            # 4. Delete sprints associated with the project
-            self.session.query(Sprint).filter(Sprint.project_id == project_id).delete(synchronize_session=False)
-
-            # 5. Execute physical delete of the project
-            affected = (
-                self.session.query(ORMProject)
-                .filter(ORMProject.id == project_id)
-                .delete(synchronize_session=False)
+            # 6. Delete sprints
+            self.session.execute(
+                text("DELETE FROM sprints WHERE project_id = :pid"),
+                {"pid": project_id}
             )
 
-            if affected == 0:
+            # 7. Execute physical delete of the project
+            result = self.session.execute(
+                text("DELETE FROM projetos WHERE id = :pid"),
+                {"pid": project_id}
+            )
+            
+            if result.rowcount == 0:
                 return False
 
             self.session.commit()
