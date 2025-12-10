@@ -1,10 +1,10 @@
 import React, { useState, useMemo } from 'react'
 import { ArrowLeft, Folder, ChevronRight, Plus, Trash2 } from 'lucide-react'
-import { Card } from '../../../components/ui/Card'
-import { SearchBar } from '../../../components/ui/SearchBar'
-import { Screen, Project } from '../../../types/mobile'
-import { useData } from '../../../contexts/DataContext'
-import { useAuth } from '../../../contexts/AuthContext'
+import { Card } from '../../components/ui/Card'
+import { SearchBar } from '../../components/ui/SearchBar'
+import { Screen, Project } from '../../types/mobile'
+import { useData } from '../../contexts/DataContext'
+import { useAuth } from '../../contexts/AuthContext'
 
 interface HistoryScreenProps {
   onNavigate: (screen: Screen) => void

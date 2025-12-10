@@ -1,9 +1,9 @@
 import React, { useState } from 'react'
 import { Briefcase, AlertCircle } from 'lucide-react'
-import { useAuth } from '../../../contexts/AuthContext'
-import { Card } from '../../../components/ui/Card'
-import { Button } from '../../../components/ui/Button'
-import { Input } from '../../../components/ui/Input'
+import { useAuth } from '../../contexts/AuthContext'
+import { Card } from '../../components/ui/Card'
+import { Button } from '../../components/ui/Button'
+import { Input } from '../../components/ui/Input'
 
 export const LoginScreen = () => {
   const { login, error: authError, isLoading } = useAuth()
