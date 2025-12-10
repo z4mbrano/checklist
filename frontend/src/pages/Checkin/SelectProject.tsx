@@ -1,11 +1,11 @@
 import React, { useState, useMemo } from 'react'
 import { ArrowLeft, Plus, Folder, ChevronRight } from 'lucide-react'
-import { useAuth } from '../contexts/AuthContext'
-import { useData } from '../contexts/DataContext'
-import { Card } from '../components/ui/Card'
-import { SearchBar } from '../components/ui/SearchBar'
-import { Button } from '../components/ui/Button'
-import { Screen, Project } from '../types/mobile'
+import { useAuth } from '../../../contexts/AuthContext'
+import { useData } from '../../../contexts/DataContext'
+import { Card } from '../../../components/ui/Card'
+import { SearchBar } from '../../../components/ui/SearchBar'
+import { Button } from '../../../components/ui/Button'
+import { Screen, Project } from '../../../types/mobile'
 
 interface SelectProjectScreenProps {
   onNavigate: (screen: Screen) => void

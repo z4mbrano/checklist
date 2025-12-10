@@ -1,10 +1,10 @@
 import React from 'react'
 import { LogOut, User as UserIcon, Play, History, Clock, UserPlus, Calendar } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
-import { useAuth } from '../contexts/AuthContext'
-import { useData } from '../contexts/DataContext'
-import { Card } from '../components/ui/Card'
-import { Screen } from '../types/mobile'
+import { useAuth } from '../../../contexts/AuthContext'
+import { useData } from '../../../contexts/DataContext'
+import { Card } from '../../../components/ui/Card'
+import { Screen } from '../../../types/mobile'
 
 interface DashboardScreenProps {
   onNavigate: (screen: Screen) => void
