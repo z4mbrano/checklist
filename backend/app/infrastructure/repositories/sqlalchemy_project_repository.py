@@ -445,7 +445,22 @@ class SQLAlchemyProjectRepository(IProjectRepository):
         Business requirement now demands permanent removal.
         """
         try:
-            # Execute physical delete
+            # First, delete related records to avoid foreign key constraints
+            # 1. Delete project contributors (association table)
+            from app.models.project import project_contributors
+            self.session.execute(
+                project_contributors.delete().where(project_contributors.c.project_id == project_id)
+            )
+            
+            # 2. Delete checkins associated with the project
+            from app.models.checkin import Checkin
+            self.session.query(Checkin).filter(Checkin.projeto_id == project_id).delete(synchronize_session=False)
+            
+            # 3. Delete sprints associated with the project (cascade will handle sprint_tasks)
+            from app.models.sprint import Sprint
+            self.session.query(Sprint).filter(Sprint.project_id == project_id).delete(synchronize_session=False)
+
+            # 4. Execute physical delete of the project
             affected = (
                 self.session.query(ORMProject)
                 .filter(ORMProject.id == project_id)
@@ -461,6 +476,7 @@ class SQLAlchemyProjectRepository(IProjectRepository):
             return True
             
         except Exception as e:
+            self.session.rollback()
             logger.error("project_delete_failed", project_id=project_id, error=str(e))
             raise RepositoryError(f"Failed to delete project: {str(e)}") from e
     
