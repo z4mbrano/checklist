@@ -454,21 +454,25 @@ class SQLAlchemyProjectRepository(IProjectRepository):
             )
             
             # 2. Delete checkins associated with the project
-            from app.models.checkin import Checkin
-            # Before deleting checkins, we might need to delete related records if they exist
-            # (e.g., attachments, executed tasks linked to checkins)
-            # Assuming cascade delete is not set up in DB for these relationships
+            from app.models.checkin import Checkin, TarefaExecutada
+            from app.models.attachment import Attachment
             
             # Get checkin IDs
             checkins = self.session.query(Checkin.id).filter(Checkin.projeto_id == project_id).all()
             checkin_ids = [c.id for c in checkins]
             
             if checkin_ids:
-                # Delete related records if models exist (adjust based on your actual models)
-                # Example: from app.models.attachment import Attachment
-                # self.session.query(Attachment).filter(Attachment.checkin_id.in_(checkin_ids)).delete(synchronize_session=False)
-                pass
+                # Delete related records (Attachments and TarefaExecutada)
+                # These need to be deleted manually because we are using bulk delete for checkins
+                # and the database might not have ON DELETE CASCADE configured
+                
+                # Delete Attachments
+                self.session.query(Attachment).filter(Attachment.checkin_id.in_(checkin_ids)).delete(synchronize_session=False)
+                
+                # Delete TarefaExecutada
+                self.session.query(TarefaExecutada).filter(TarefaExecutada.checkin_id.in_(checkin_ids)).delete(synchronize_session=False)
 
+            # Now it's safe to delete checkins
             self.session.query(Checkin).filter(Checkin.projeto_id == project_id).delete(synchronize_session=False)
             
             # 3. Delete sprint tasks associated with sprints of the project
