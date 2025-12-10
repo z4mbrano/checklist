@@ -446,6 +446,7 @@ class SQLAlchemyProjectRepository(IProjectRepository):
         """
         try:
             # First, delete related records to avoid foreign key constraints
+            
             # 1. Delete project contributors (association table)
             from app.models.project import project_contributors
             self.session.execute(
@@ -456,11 +457,20 @@ class SQLAlchemyProjectRepository(IProjectRepository):
             from app.models.checkin import Checkin
             self.session.query(Checkin).filter(Checkin.projeto_id == project_id).delete(synchronize_session=False)
             
-            # 3. Delete sprints associated with the project (cascade will handle sprint_tasks)
-            from app.models.sprint import Sprint
+            # 3. Delete sprint tasks associated with sprints of the project
+            from app.models.sprint import Sprint, SprintTask
+            
+            # Get sprint IDs to delete their tasks
+            sprints = self.session.query(Sprint.id).filter(Sprint.project_id == project_id).all()
+            sprint_ids = [s.id for s in sprints]
+            
+            if sprint_ids:
+                self.session.query(SprintTask).filter(SprintTask.sprint_id.in_(sprint_ids)).delete(synchronize_session=False)
+            
+            # 4. Delete sprints associated with the project
             self.session.query(Sprint).filter(Sprint.project_id == project_id).delete(synchronize_session=False)
 
-            # 4. Execute physical delete of the project
+            # 5. Execute physical delete of the project
             affected = (
                 self.session.query(ORMProject)
                 .filter(ORMProject.id == project_id)

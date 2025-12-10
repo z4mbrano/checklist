@@ -223,8 +223,8 @@ export const ProjectFormScreen = ({
                   ...prev,
                   responsible: option.label,
                   responsibleId: Number(option.id),
-                  // Se vier e-mail do serviço, pré-preenche; caso contrário mantém valor atual
-                  responsibleEmail: option.subLabel || prev.responsibleEmail
+                  // Atualiza o e-mail com o subLabel (que contém o e-mail do usuário)
+                  responsibleEmail: option.subLabel || ''
                 }))
               }}
               initialValue={formData.responsible ? { id: formData.responsibleId || 0, label: formData.responsible } : null}
