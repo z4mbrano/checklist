@@ -138,7 +138,7 @@ export const ProjectDetailScreen = ({
     </div>
   )
   
-  const projectCheckins = checkins.filter(c => c.projectId === selectedProject.id)
+  const projectCheckins = (checkins || []).filter(c => c.projectId === selectedProject.id)
   
   // Check if user can edit this project
   const canEdit = user?.isAdmin || user?.email === selectedProject.responsibleEmail
@@ -208,7 +208,7 @@ const handleExportCSV = () => {
     const link = document.createElement('a')
     const url = URL.createObjectURL(blob)
     link.setAttribute('href', url)
-    link.setAttribute('download', `relatorio_${selectedProject.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.csv`)
+    link.setAttribute('download', `relatorio_${(selectedProject.name || 'projeto').replace(/[^a-z0-9]/gi, '_').toLowerCase()}.csv`)
     link.style.visibility = 'hidden'
     document.body.appendChild(link)
     link.click()
@@ -287,7 +287,7 @@ const handleExportCSV = () => {
           <div className="text-center py-4">Carregando...</div>
         ) : (
           <div className="space-y-2">
-            {contributors && contributors.length > 0 ? (
+            {Array.isArray(contributors) && contributors.length > 0 ? (
               contributors.map((contributor: any) => (
                 <div key={contributor.id} className="flex justify-between items-center p-2 bg-slate-50 rounded-lg">
                   <div>
