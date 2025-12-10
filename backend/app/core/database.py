@@ -14,6 +14,18 @@ if settings.database_url.startswith("sqlite"):
     engine_kwargs.update({
         "connect_args": {"check_same_thread": False}  # Needed for SQLite
     })
+elif settings.database_url.startswith("mysql"):
+    # MySQL configuration
+    engine_kwargs.update({
+        "pool_pre_ping": True,        # Verifica conexão antes de usar
+        "pool_recycle": 3600,          # Recicla conexões a cada 1h
+        "pool_size": 5,                # Máximo de 5 conexões simultâneas
+        "max_overflow": 10,            # Permite até 10 conexões extras
+        "connect_args": {
+            "connect_timeout": 10,     # Timeout de 10 segundos
+            "charset": "utf8mb4"       # Suporte a emojis e caracteres especiais
+        }
+    })
 else:
     # PostgreSQL configuration  
     engine_kwargs.update({
