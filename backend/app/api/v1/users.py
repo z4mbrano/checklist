@@ -42,6 +42,6 @@ def search_users(
     users = service.search_users(q, limit)
     logger.info(f"[USER SEARCH] Found {len(users)} users from DB")
     
-    result = [SearchItemResponse(id=u.id, name=u.name) for u in users]
+    result = [SearchItemResponse(id=u.id, name=u.name, email=u.email) for u in users]
     logger.info(f"[USER SEARCH] Returning: {[r.model_dump() for r in result]}")
     return result
