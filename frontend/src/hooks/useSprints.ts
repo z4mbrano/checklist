@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { sprintService } from '../services/sprint.service';
-import { Sprint, CreateSprint, UpdateSprintStatus, UpdateSprintTask } from '../types/sprint.types';
+import { Sprint, SprintTask, CreateSprint, UpdateSprintStatus, UpdateSprintTask } from '../types/sprint.types';
 
 export function useSprints(projectId?: number) {
   const [sprints, setSprints] = useState<Sprint[]>([]);
@@ -49,12 +49,31 @@ export function useSprints(projectId?: number) {
 
   const updateSprintTask = async (sprintId: number, taskId: number, data: UpdateSprintTask) => {
     try {
-      const updatedSprint = await sprintService.updateTask(taskId, data);
-      // The API returns the updated Sprint object
-      setSprints(prev => prev.map(s => s.id === sprintId ? updatedSprint : s));
-      return updatedSprint;
+      // Optimistic update
+      setSprints(prev => prev.map(s => {
+        if (s.id !== sprintId) return s;
+        return {
+          ...s,
+          tasks: s.tasks.map(t => t.id === taskId ? { ...t, ...data } : t)
+        };
+      }));
+
+      const updatedTask = await sprintService.updateTask(taskId, data);
+      
+      // Update with server response
+      setSprints(prev => prev.map(s => {
+        if (s.id !== sprintId) return s;
+        return {
+          ...s,
+          tasks: s.tasks.map(t => t.id === taskId ? updatedTask : t)
+        };
+      }));
+      
+      return updatedTask;
     } catch (err) {
       console.error(err);
+      // Revert on error
+      fetchSprints();
       throw err;
     }
   };

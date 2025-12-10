@@ -1,5 +1,5 @@
 import { api } from './api';
-import { Sprint, CreateSprint, UpdateSprintStatus, UpdateSprintTask } from '@/types';
+import { Sprint, SprintTask, CreateSprint, UpdateSprintStatus, UpdateSprintTask } from '@/types';
 
 export const sprintService = {
   getAll: async (projectId?: number) => {
@@ -24,7 +24,7 @@ export const sprintService = {
   },
 
   updateTask: async (taskId: number, data: UpdateSprintTask) => {
-    const response = await api.patch<Sprint>(`/sprints/tasks/${taskId}`, data);
+    const response = await api.patch<SprintTask>(`/sprints/tasks/${taskId}`, data);
     return response.data;
   },
   
