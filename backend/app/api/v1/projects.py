@@ -294,6 +294,11 @@ async def start_project(
         404: Project not found
     """
     try:
+        # Permission check
+        project = await service.get_project(project_id)
+        if not (current_user.is_admin or current_user.is_supervisor) and project.responsible_user_id != current_user.id:
+             raise HTTPException(status_code=403, detail="Not authorized to update project status")
+
         project = await service.start_project(project_id)
         return ProjectResponse.from_domain(project)
         
@@ -317,6 +322,11 @@ async def pause_project(
     Business Rule: Can only pause EM_ANDAMENTO projects.
     """
     try:
+        # Permission check
+        project = await service.get_project(project_id)
+        if not (current_user.is_admin or current_user.is_supervisor) and project.responsible_user_id != current_user.id:
+             raise HTTPException(status_code=403, detail="Not authorized to update project status")
+
         project = await service.pause_project(project_id)
         return ProjectResponse.from_domain(project)
         
@@ -340,6 +350,11 @@ async def complete_project(
     Business Rule: Can only complete active projects.
     """
     try:
+        # Permission check
+        project = await service.get_project(project_id)
+        if not (current_user.is_admin or current_user.is_supervisor) and project.responsible_user_id != current_user.id:
+             raise HTTPException(status_code=403, detail="Not authorized to update project status")
+
         completion_date = request.completion_date if request else None
         project = await service.complete_project(project_id, completion_date)
         return ProjectResponse.from_domain(project)
@@ -364,6 +379,11 @@ async def cancel_project(
     Business Rule: Cannot cancel completed projects.
     """
     try:
+        # Permission check
+        project = await service.get_project(project_id)
+        if not (current_user.is_admin or current_user.is_supervisor) and project.responsible_user_id != current_user.id:
+             raise HTTPException(status_code=403, detail="Not authorized to update project status")
+
         reason = request.cancellation_reason if request else None
         project = await service.cancel_project(project_id, reason)
         return ProjectResponse.from_domain(project)
@@ -434,7 +454,7 @@ async def add_contributor(
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
         
-    if not current_user.is_admin and project.responsible_user_id != current_user.id:
+    if not (current_user.is_admin or current_user.is_supervisor) and project.responsible_user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not authorized to manage contributors for this project")
         
     try:
@@ -463,7 +483,7 @@ async def remove_contributor(
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
         
-    if not current_user.is_admin and project.responsible_user_id != current_user.id:
+    if not (current_user.is_admin or current_user.is_supervisor) and project.responsible_user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not authorized to manage contributors for this project")
         
     try:

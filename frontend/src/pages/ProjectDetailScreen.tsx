@@ -9,8 +9,9 @@ import { useData } from '../contexts/DataContext'
 import { useAuth } from '../contexts/AuthContext'
 import { ACTIVITY_TAGS } from '../constants'
 import { useParams } from 'react-router-dom'
-import { useProject, useProjectContributors, useAddContributor, useRemoveContributor } from '../hooks/useProjects'
+import { useProject, useProjectContributors, useAddContributor, useRemoveContributor, useProjectStatus } from '../hooks/useProjects'
 import { userService } from '../services/api'
+import { UserRole } from '../types/auth.types'
 
 // --- PRINT STYLES ---
 const PrintStyles = () => (
@@ -114,6 +115,20 @@ export const ProjectDetailScreen = ({
     }
   }
 
+  // Status logic
+  const { start, pause, complete, cancel } = useProjectStatus()
+  const [isStatusModalOpen, setIsStatusModalOpen] = useState(false)
+
+  const handleStatusUpdate = (action: 'start' | 'pause' | 'complete' | 'cancel') => {
+    if (!selectedProject) return
+    const pid = parseInt(selectedProject.id)
+    if (action === 'start') start.mutate(pid)
+    else if (action === 'pause') pause.mutate(pid)
+    else if (action === 'complete') complete.mutate({ id: pid })
+    else if (action === 'cancel') cancel.mutate({ id: pid })
+    setIsStatusModalOpen(false)
+  }
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -141,7 +156,7 @@ export const ProjectDetailScreen = ({
   const projectCheckins = (checkins || []).filter(c => c.projectId === selectedProject.id)
   
   // Check if user can edit this project
-  const canEdit = user?.isAdmin || user?.email === selectedProject.responsibleEmail
+  const canEdit = user?.isAdmin || user?.role === UserRole.SUPERVISOR || user?.email === selectedProject.responsibleEmail
 
   const handleExportPDF = () => {
     window.print()
@@ -242,7 +257,21 @@ const handleExportCSV = () => {
         <div className="flex items-center gap-4">
           <button onClick={() => onNavigate('history')} className="p-2 hover:bg-slate-200 rounded-full no-print"><ArrowLeft /></button>
           <div>
-            <h1 className="text-xl font-bold text-slate-800">{selectedProject.name}</h1>
+            <div className="flex items-center gap-2">
+              <h1 className="text-xl font-bold text-slate-800">{selectedProject.name}</h1>
+              <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                selectedProject.status === 'Concluído' ? 'bg-green-100 text-green-800' :
+                selectedProject.status === 'Em Andamento' ? 'bg-blue-100 text-blue-800' :
+                'bg-gray-100 text-gray-800'
+              }`}>
+                {selectedProject.status}
+              </span>
+              {canEdit && (
+                <button onClick={() => setIsStatusModalOpen(true)} className="text-slate-400 hover:text-blue-600 no-print" title="Alterar Status">
+                  <Edit size={14} />
+                </button>
+              )}
+            </div>
             <p className="text-sm text-slate-500">Cliente: {selectedProject.client}</p>
             <p className="text-sm text-slate-500">Responsável: {selectedProject.responsible}</p>
           </div>
@@ -427,6 +456,41 @@ const handleExportCSV = () => {
         onClose={() => setEditingCheckin(null)}
         onSave={handleUpdateCheckin}
       />
+
+      {/* Status Change Modal */}
+      <Modal
+        isOpen={isStatusModalOpen}
+        onClose={() => setIsStatusModalOpen(false)}
+        title="Alterar Status do Projeto"
+      >
+        <div className="space-y-3">
+           <p className="text-sm text-slate-600 mb-4">Selecione o novo status para o projeto:</p>
+           
+           {selectedProject.status !== 'Em Andamento' && (
+             <Button onClick={() => handleStatusUpdate('start')} className="w-full justify-start">
+               <CheckCircle className="mr-2 h-4 w-4" /> Iniciar (Em Andamento)
+             </Button>
+           )}
+           
+           {selectedProject.status === 'Em Andamento' && (
+             <Button onClick={() => handleStatusUpdate('pause')} variant="outline" className="w-full justify-start">
+               <History className="mr-2 h-4 w-4" /> Pausar
+             </Button>
+           )}
+           
+           {selectedProject.status === 'Em Andamento' && (
+             <Button onClick={() => handleStatusUpdate('complete')} variant="success" className="w-full justify-start">
+               <CheckCircle className="mr-2 h-4 w-4" /> Concluir Projeto
+             </Button>
+           )}
+           
+           {selectedProject.status !== 'Cancelado' && selectedProject.status !== 'Concluído' && (
+             <Button onClick={() => handleStatusUpdate('cancel')} variant="danger" className="w-full justify-start">
+               <Trash2 className="mr-2 h-4 w-4" /> Cancelar Projeto
+             </Button>
+           )}
+        </div>
+      </Modal>
     </div>
   )
 }

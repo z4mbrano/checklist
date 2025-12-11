@@ -15,7 +15,7 @@ export interface Project {
   startDate: string
   endDate?: string
   observations?: string
-  status: 'Em Andamento' | 'Concluído' | 'Pausado'
+  status: 'Em Andamento' | 'Concluído' | 'Pausado' | 'Cancelado' | 'Planejamento'
 }
 
 export interface Checkin {

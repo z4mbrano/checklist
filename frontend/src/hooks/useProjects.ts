@@ -261,3 +261,53 @@ export function useRemoveContributor() {
     }
   })
 }
+
+/**
+ * Update Project Status Hooks
+ */
+export function useProjectStatus() {
+  const queryClient = useQueryClient()
+
+  const invalidate = (projectId: number) => {
+    queryClient.invalidateQueries({ queryKey: projectKeys.list() })
+    queryClient.invalidateQueries({ queryKey: projectKeys.detail(projectId.toString()) })
+  }
+
+  const start = useMutation({
+    mutationFn: (projectId: number) => projectService.start(projectId),
+    onSuccess: (_, projectId) => {
+      invalidate(projectId)
+      toast.success('Projeto iniciado!')
+    },
+    onError: (error: any) => toast.error(error.response?.data?.detail || 'Erro ao iniciar projeto')
+  })
+
+  const pause = useMutation({
+    mutationFn: (projectId: number) => projectService.pause(projectId),
+    onSuccess: (_, projectId) => {
+      invalidate(projectId)
+      toast.success('Projeto pausado!')
+    },
+    onError: (error: any) => toast.error(error.response?.data?.detail || 'Erro ao pausar projeto')
+  })
+
+  const complete = useMutation({
+    mutationFn: ({ id, date }: { id: number, date?: string }) => projectService.complete(id, date),
+    onSuccess: (_, { id }) => {
+      invalidate(id)
+      toast.success('Projeto concluído!')
+    },
+    onError: (error: any) => toast.error(error.response?.data?.detail || 'Erro ao concluir projeto')
+  })
+
+  const cancel = useMutation({
+    mutationFn: ({ id, reason }: { id: number, reason?: string }) => projectService.cancel(id, reason),
+    onSuccess: (_, { id }) => {
+      invalidate(id)
+      toast.success('Projeto cancelado!')
+    },
+    onError: (error: any) => toast.error(error.response?.data?.detail || 'Erro ao cancelar projeto')
+  })
+
+  return { start, pause, complete, cancel }
+}

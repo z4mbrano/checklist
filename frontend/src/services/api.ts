@@ -114,6 +114,26 @@ class ProjectService {
   async delete(id: number): Promise<void> {
     await api.delete(`/projects/${id}`, { params: { force: true } })
   }
+
+  async start(id: number): Promise<Project> {
+    const response = await api.post(`/projects/${id}/start`)
+    return response.data
+  }
+
+  async pause(id: number): Promise<Project> {
+    const response = await api.post(`/projects/${id}/pause`)
+    return response.data
+  }
+
+  async complete(id: number, completionDate?: string): Promise<Project> {
+    const response = await api.post(`/projects/${id}/complete`, { completion_date: completionDate })
+    return response.data
+  }
+
+  async cancel(id: number, reason?: string): Promise<Project> {
+    const response = await api.post(`/projects/${id}/cancel`, { cancellation_reason: reason })
+    return response.data
+  }
 }
 
 class ClientService {
