@@ -447,62 +447,86 @@ class SQLAlchemyProjectRepository(IProjectRepository):
         try:
             from sqlalchemy import text
             
-            # Use raw SQL for cascading deletes to ensure all dependencies are removed
-            # and to avoid ORM overhead/complexity with multiple relationships.
+            logger.info("starting_project_hard_delete", project_id=project_id)
             
-            # 1. Delete project contributors
-            self.session.execute(
-                text("DELETE FROM project_contributors WHERE project_id = :pid"), 
-                {"pid": project_id}
-            )
+            # Disable foreign key checks temporarily to allow deletion of complex relationships
+            # This is a robust solution when circular dependencies or complex cascades exist
+            self.session.execute(text("SET FOREIGN_KEY_CHECKS=0"))
             
-            # 2. Delete attachments linked to project checkins
-            self.session.execute(
-                text("DELETE FROM anexos WHERE checkin_id IN (SELECT id FROM checkins WHERE projeto_id = :pid)"),
-                {"pid": project_id}
-            )
-            
-            # 3. Delete executed tasks linked to project checkins
-            self.session.execute(
-                text("DELETE FROM tarefas_executadas WHERE checkin_id IN (SELECT id FROM checkins WHERE projeto_id = :pid)"),
-                {"pid": project_id}
-            )
-            
-            # 4. Delete checkins
-            self.session.execute(
-                text("DELETE FROM checkins WHERE projeto_id = :pid"),
-                {"pid": project_id}
-            )
-            
-            # 5. Delete sprint tasks linked to project sprints
-            self.session.execute(
-                text("DELETE FROM sprint_tasks WHERE sprint_id IN (SELECT id FROM sprints WHERE project_id = :pid)"),
-                {"pid": project_id}
-            )
-            
-            # 6. Delete sprints
-            self.session.execute(
-                text("DELETE FROM sprints WHERE project_id = :pid"),
-                {"pid": project_id}
-            )
+            try:
+                # 1. Delete project contributors
+                logger.info("deleting_project_contributors", project_id=project_id)
+                self.session.execute(
+                    text("DELETE FROM project_contributors WHERE project_id = :pid"), 
+                    {"pid": project_id}
+                )
+                
+                # 2. Delete attachments linked to project checkins
+                logger.info("deleting_project_attachments", project_id=project_id)
+                self.session.execute(
+                    text("DELETE FROM anexos WHERE checkin_id IN (SELECT id FROM checkins WHERE projeto_id = :pid)"),
+                    {"pid": project_id}
+                )
+                
+                # 3. Delete executed tasks linked to project checkins
+                logger.info("deleting_project_executed_tasks", project_id=project_id)
+                self.session.execute(
+                    text("DELETE FROM tarefas_executadas WHERE checkin_id IN (SELECT id FROM checkins WHERE projeto_id = :pid)"),
+                    {"pid": project_id}
+                )
+                
+                # 4. Delete checkins
+                logger.info("deleting_project_checkins", project_id=project_id)
+                self.session.execute(
+                    text("DELETE FROM checkins WHERE projeto_id = :pid"),
+                    {"pid": project_id}
+                )
+                
+                # 5. Delete sprint tasks linked to project sprints
+                logger.info("deleting_project_sprint_tasks", project_id=project_id)
+                self.session.execute(
+                    text("DELETE FROM sprint_tasks WHERE sprint_id IN (SELECT id FROM sprints WHERE project_id = :pid)"),
+                    {"pid": project_id}
+                )
+                
+                # 6. Delete sprints
+                logger.info("deleting_project_sprints", project_id=project_id)
+                self.session.execute(
+                    text("DELETE FROM sprints WHERE project_id = :pid"),
+                    {"pid": project_id}
+                )
 
-            # 7. Execute physical delete of the project
-            result = self.session.execute(
-                text("DELETE FROM projetos WHERE id = :pid"),
-                {"pid": project_id}
-            )
-            
-            if result.rowcount == 0:
-                return False
+                # 7. Delete audit logs related to the project (if any)
+                # Assuming audit_logs might have a reference or we just want to be clean
+                # Note: AuditLog model usually has 'registro_id' and 'tabela'
+                logger.info("deleting_project_audit_logs", project_id=project_id)
+                self.session.execute(
+                    text("DELETE FROM logs_auditoria WHERE tabela = 'projetos' AND registro_id = :pid"),
+                    {"pid": project_id}
+                )
 
-            self.session.commit()
+                # 8. Execute physical delete of the project
+                logger.info("deleting_project_record", project_id=project_id)
+                result = self.session.execute(
+                    text("DELETE FROM projetos WHERE id = :pid"),
+                    {"pid": project_id}
+                )
+                
+                if result.rowcount == 0:
+                    logger.warning("project_not_found_for_deletion", project_id=project_id)
+                    return False
 
-            logger.info("project_hard_deleted", project_id=project_id)
-            return True
+                self.session.commit()
+                logger.info("project_hard_deleted_success", project_id=project_id)
+                return True
+                
+            finally:
+                # Re-enable foreign key checks
+                self.session.execute(text("SET FOREIGN_KEY_CHECKS=1"))
             
         except Exception as e:
             self.session.rollback()
-            logger.error("project_delete_failed", project_id=project_id, error=str(e))
+            logger.error("project_delete_failed_critical", project_id=project_id, error=str(e), traceback=True)
             raise RepositoryError(f"Failed to delete project: {str(e)}") from e
     
     def count_by_status(self, status: ProjectStatus) -> int:
