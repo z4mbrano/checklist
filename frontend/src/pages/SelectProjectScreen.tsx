@@ -13,9 +13,15 @@ interface SelectProjectScreenProps {
 }
 
 export const SelectProjectScreen = ({ onNavigate, onSelectProject }: SelectProjectScreenProps) => {
-  const { user, isAdmin } = useAuth()
+  const { user } = useAuth()
   const { projects } = useData()
   const [searchTerm, setSearchTerm] = useState('')
+
+  const canManageProjects = React.useMemo(() => {
+    if (!user) return false
+    const role = String((user as any).role || '').toLowerCase()
+    return (user as any).isAdmin === true || role === 'admin' || role === 'supervisor'
+  }, [user])
 
   const filteredProjects = useMemo(() => {
     // Backend already filters projects based on user role (responsible or contributor)
@@ -37,7 +43,7 @@ export const SelectProjectScreen = ({ onNavigate, onSelectProject }: SelectProje
         </button>
         <div>
           <h1 className="text-xl font-bold text-slate-800">Selecionar Projeto</h1>
-          {user && !isAdmin && (
+          {user && !canManageProjects && (
             <p className="text-xs text-slate-500">Seus projetos atribuídos</p>
           )}
         </div>
@@ -45,7 +51,7 @@ export const SelectProjectScreen = ({ onNavigate, onSelectProject }: SelectProje
 
       <div className="flex-1 space-y-4">
         <SearchBar value={searchTerm} onChange={setSearchTerm} placeholder="Buscar por nome ou cliente..." />
-        {isAdmin && (
+        {canManageProjects && (
           <Button 
             variant="outline" 
             onClick={() => onNavigate('addProject')} 

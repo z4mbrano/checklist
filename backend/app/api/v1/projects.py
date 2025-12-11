@@ -244,20 +244,32 @@ async def delete_project(
             detail="Você não tem permissão para excluir este projeto"
         )
     
-    deleted = await service.delete_project(project_id=project_id, force=force)
-    
-    if not deleted:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Project with ID {project_id} not found"
+    try:
+        deleted = await service.delete_project(project_id=project_id, force=force)
+
+        if not deleted:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Project with ID {project_id} not found"
+            )
+
+        logger.info(
+            "project_deleted",
+            project_id=project_id,
+            deleted_by=current_user.id,
+            force=force
         )
-    
-    logger.info(
-        "project_deleted",
-        project_id=project_id,
-        deleted_by=current_user.id,
-        force=force
-    )
+    except RepositoryError as e:
+        logger.error(
+            "project_delete_failed_endpoint",
+            project_id=project_id,
+            error=str(e),
+            exc_info=True
+        )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erro ao excluir projeto: {str(e)}"
+        )
 
 
 # ========================================

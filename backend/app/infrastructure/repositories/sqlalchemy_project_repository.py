@@ -519,7 +519,12 @@ class SQLAlchemyProjectRepository(IProjectRepository):
             
         except Exception as e:
             self.session.rollback()
-            logger.error("project_delete_failed_critical", project_id=project_id, error=str(e), traceback=True)
+            logger.error(
+                "project_delete_failed_critical",
+                project_id=project_id,
+                error=str(e),
+                exc_info=True
+            )
             # Re-raise as RepositoryError to be handled by the service/controller
             raise RepositoryError(f"Failed to delete project: {str(e)}") from e
     

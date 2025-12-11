@@ -19,6 +19,12 @@ export const HistoryScreen = ({
   const { projects, checkins, deleteProject } = useData()
   const [searchTerm, setSearchTerm] = useState('')
 
+  const canManageProjects = React.useMemo(() => {
+    if (!user) return false
+    const role = String((user as any).role || '').toLowerCase()
+    return (user as any).isAdmin === true || role === 'admin' || role === 'supervisor'
+  }, [user])
+
   const filteredProjects = useMemo(() => {
     const base = projects // Adjust later if role-based filtering returns
     if (!searchTerm.trim()) return base
@@ -36,13 +42,15 @@ export const HistoryScreen = ({
             <button onClick={() => onNavigate('dashboard')} className="p-2 hover:bg-slate-200 rounded-full"><ArrowLeft /></button>
             <h1 className="text-xl font-bold text-slate-800">Histórico & Projetos</h1>
         </div>
-        <button 
-            onClick={() => onNavigate('addProject')}
-            className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-        >
-            <Plus size={20} />
-            <span className="hidden sm:inline">Novo Projeto</span>
-        </button>
+        {canManageProjects && (
+          <button 
+              onClick={() => onNavigate('addProject')}
+              className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+          >
+              <Plus size={20} />
+              <span className="hidden sm:inline">Novo Projeto</span>
+          </button>
+        )}
       </header>
 
       <SearchBar value={searchTerm} onChange={setSearchTerm} placeholder="Buscar projetos..." className="mb-6" />
@@ -61,20 +69,22 @@ export const HistoryScreen = ({
               }`}>
                 {p.status}
               </span>
-              <button
-                className="text-red-500 hover:bg-red-50 p-2 rounded"
-                title="Excluir projeto"
-                onClick={async (e) => {
-                  e.stopPropagation()
-                  const ok = window.confirm('Tem certeza que deseja excluir este projeto?')
-                  if (!ok) return
-                  if (deleteProject) {
-                    await deleteProject(p.id)
-                  }
-                }}
-              >
-                <Trash2 size={16} />
-              </button>
+              {canManageProjects && (
+                <button
+                  className="text-red-500 hover:bg-red-50 p-2 rounded"
+                  title="Excluir projeto"
+                  onClick={async (e) => {
+                    e.stopPropagation()
+                    const ok = window.confirm('Tem certeza que deseja excluir este projeto?')
+                    if (!ok) return
+                    if (deleteProject) {
+                      await deleteProject(p.id)
+                    }
+                  }}
+                >
+                  <Trash2 size={16} />
+                </button>
+              )}
               </div>
             </div>
             <h3 className="font-bold text-slate-800 mb-1">{p.name}</h3>
