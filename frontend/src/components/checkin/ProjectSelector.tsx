@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { ChevronDown, Folder } from 'lucide-react'
-import { Project, Client } from '../../types'
+import { Project, Client, ProjectStatus } from '../../types'
 import { projectService, clientService } from '../../services/api'
 import { Button } from '../common/Button'
 
@@ -140,14 +140,17 @@ export function ProjectSelector({
                     </div>
                     <div className="flex flex-col text-right">
                       <span className={`text-xs px-2 py-1 rounded-full ${
-                        project.status === 'active' 
+                        project.status === ProjectStatus.EM_ANDAMENTO 
                           ? 'bg-green-900/50 text-green-300' 
-                          : project.status === 'on_hold'
+                          : project.status === ProjectStatus.PAUSADO
                           ? 'bg-yellow-900/50 text-yellow-300'
                           : 'bg-gray-700/50 text-gray-400'
                       }`}>
-                        {project.status === 'active' ? 'Ativo' : 
-                         project.status === 'on_hold' ? 'Pausado' : 'Concluído'}
+                        {project.status === ProjectStatus.EM_ANDAMENTO ? 'Em Andamento' : 
+                         project.status === ProjectStatus.PAUSADO ? 'Pausado' : 
+                         project.status === ProjectStatus.CONCLUIDO ? 'Concluído' :
+                         project.status === ProjectStatus.PLANEJAMENTO ? 'Planejamento' :
+                         project.status === ProjectStatus.CANCELADO ? 'Cancelado' : project.status}
                       </span>
                     </div>
                   </div>
