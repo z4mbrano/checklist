@@ -52,19 +52,19 @@ class User(Base):
     @property
     def is_supervisor(self) -> bool:
         """Check if user is supervisor."""
-        return self.tipo == UserRole.SUPERVISOR
+        return self.role == UserRole.SUPERVISOR
     
     @property
     def is_tecnico(self) -> bool:
         """Check if user is tecnico."""
-        return self.tipo == UserRole.TECNICO
+        return self.role == UserRole.TECNICO
     
     @property
     def can_manage_users(self) -> bool:
         """Check if user can manage other users."""
-        return self.tipo == UserRole.ADMIN
+        return self.role == UserRole.ADMIN
     
     @property
     def can_view_all_projects(self) -> bool:
         """Check if user can view all projects."""
-        return self.tipo in [UserRole.ADMIN, UserRole.SUPERVISOR]
+        return self.role in [UserRole.ADMIN, UserRole.SUPERVISOR]
