@@ -229,7 +229,7 @@ export const SprintsScreen: React.FC<SprintsScreenProps> = ({ onNavigate }) => {
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-[repeat(auto-fill,minmax(330px,1fr))] gap-6">
               {sprints.length === 0 && (
-                <div className="col-span-full text-center py-12 text-slate-400">
+                <div className="col-span-full text-center py-12 text-slate-350">
                   <p>Nenhum sprint encontrado para este projeto.</p>
                 </div>
               )}
