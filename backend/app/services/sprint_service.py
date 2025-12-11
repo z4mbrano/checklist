@@ -93,6 +93,42 @@ class SprintService:
         self.db.refresh(sprint)
         return sprint
 
+    def update_sprint(self, sprint_id: int, sprint_update: SprintUpdate) -> Optional[Sprint]:
+        """Update sprint details and add new tasks."""
+        try:
+            sprint = self.get_sprint(sprint_id)
+            if not sprint:
+                return None
+            
+            # Update basic fields
+            if sprint_update.title is not None:
+                sprint.title = sprint_update.title
+            if sprint_update.start_date is not None:
+                sprint.start_date = sprint_update.start_date
+            if sprint_update.end_date is not None:
+                sprint.end_date = sprint_update.end_date
+            if sprint_update.observation is not None:
+                sprint.observation = sprint_update.observation
+            if sprint_update.status is not None:
+                sprint.status = sprint_update.status
+            
+            # Add new tasks if provided
+            if sprint_update.tasks:
+                for task_in in sprint_update.tasks:
+                    db_task = SprintTask(
+                        sprint_id=sprint.id,
+                        description=task_in.description
+                    )
+                    self.db.add(db_task)
+            
+            self.db.commit()
+            self.db.refresh(sprint)
+            return sprint
+        except Exception as e:
+            self.db.rollback()
+            logger.error(f"Error updating sprint: {e}")
+            raise e
+
     def delete_sprint(self, sprint_id: int) -> bool:
         """Delete a sprint."""
         sprint = self.get_sprint(sprint_id)

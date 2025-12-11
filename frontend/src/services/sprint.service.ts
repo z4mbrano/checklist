@@ -18,6 +18,11 @@ export const sprintService = {
     return response.data;
   },
 
+  update: async (id: number, data: any) => {
+    const response = await api.put<Sprint>(`/sprints/${id}`, data);
+    return response.data;
+  },
+
   updateStatus: async (id: number, status: UpdateSprintStatus) => {
     const response = await api.patch<Sprint>(`/sprints/${id}/status`, status);
     return response.data;

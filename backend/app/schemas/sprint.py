@@ -34,8 +34,12 @@ class SprintCreate(SprintBase):
     tasks: List[SprintTaskCreate]
 
 class SprintUpdate(BaseModel):
+    title: Optional[str] = None
+    start_date: Optional[date] = None
+    end_date: Optional[date] = None
     status: Optional[SprintStatus] = None
     observation: Optional[str] = None
+    tasks: Optional[List[SprintTaskCreate]] = None # Allow adding new tasks during update
 
 class SprintResponse(SprintBase):
     id: int

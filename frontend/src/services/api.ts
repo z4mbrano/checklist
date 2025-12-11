@@ -215,9 +215,36 @@ class CheckinService {
   }
 }
 
+class SprintService {
+  async getByProject(projectId: number): Promise<any[]> {
+    const response = await api.get('/sprints/', { params: { project_id: projectId } })
+    return response.data
+  }
+
+  async create(data: any): Promise<any> {
+    const response = await api.post('/sprints/', data)
+    return response.data
+  }
+
+  async update(id: number, data: any): Promise<any> {
+    const response = await api.put(`/sprints/${id}`, data)
+    return response.data
+  }
+
+  async updateTaskStatus(taskId: number, isCompleted: boolean): Promise<any> {
+    const response = await api.patch(`/sprints/tasks/${taskId}`, { is_completed: isCompleted })
+    return response.data
+  }
+
+  async delete(id: number): Promise<void> {
+    await api.delete(`/sprints/${id}`)
+  }
+}
+
 // Export service instances
 export const projectService = new ProjectService()
 export const clientService = new ClientService()
 export const userService = new UserService()
 export const taskService = new TaskService()
 export const checkinService = new CheckinService()
+export const sprintService = new SprintService()

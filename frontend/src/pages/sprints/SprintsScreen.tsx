@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Plus, Calendar, CheckCircle, Circle, Trash2, MoreVertical, X, ArrowLeft, Folder, ChevronRight } from 'lucide-react';
+import { Plus, Calendar, CheckCircle, Circle, Trash2, MoreVertical, X, ArrowLeft, Folder, ChevronRight, Edit } from 'lucide-react';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Modal } from '../../components/ui/Modal';
@@ -25,9 +25,11 @@ export const SprintsScreen: React.FC<SprintsScreenProps> = ({ onNavigate }) => {
   const [selectedProjectId, setSelectedProjectId] = useState<number | undefined>(undefined);
   const [searchTerm, setSearchTerm] = useState('');
   
-  const { sprints, loading, createSprint, updateSprintStatus, updateSprintTask, deleteSprint } = useSprints(selectedProjectId);
+  const { sprints, loading, createSprint, updateSprint, updateSprintStatus, updateSprintTask, deleteSprint } = useSprints(selectedProjectId);
   
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingSprint, setEditingSprint] = useState<Sprint | null>(null);
   const [newTaskDescription, setNewTaskDescription] = useState('');
   const [formData, setFormData] = useState<Partial<CreateSprint>>({
     title: '',
@@ -76,6 +78,42 @@ export const SprintsScreen: React.FC<SprintsScreenProps> = ({ onNavigate }) => {
       ...prev,
       tasks: prev.tasks?.filter((_, i) => i !== index)
     }));
+  };
+
+  const handleEditSprint = (sprint: Sprint) => {
+    setEditingSprint(sprint);
+    setFormData({
+      title: sprint.title,
+      start_date: sprint.start_date,
+      end_date: sprint.end_date,
+      observation: sprint.observation,
+      tasks: [] // Only for new tasks
+    });
+    setIsEditModalOpen(true);
+  };
+
+  const handleUpdateSprint = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingSprint || !formData.title || !formData.start_date || !formData.end_date) {
+      alert('Please fill in all required fields');
+      return;
+    }
+
+    try {
+      await updateSprint(editingSprint.id, {
+        title: formData.title,
+        start_date: formData.start_date,
+        end_date: formData.end_date,
+        observation: formData.observation,
+        tasks: formData.tasks || []
+      });
+      setIsEditModalOpen(false);
+      setEditingSprint(null);
+      setFormData({ title: '', start_date: '', end_date: '', observation: '', tasks: [] });
+    } catch (error) {
+      alert('Failed to update sprint');
+      console.error(error);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -213,6 +251,13 @@ export const SprintsScreen: React.FC<SprintsScreenProps> = ({ onNavigate }) => {
                       }`}>
                         {getStatusLabel(sprint.status || 'planned')}
                       </span>
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); handleEditSprint(sprint); }}
+                        className="text-blue-500 hover:text-blue-700"
+                        title="Editar Sprint"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </button>
                       <button onClick={() => handleDeleteSprint(sprint.id)} className="text-red-500 hover:text-red-700">
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -256,6 +301,97 @@ export const SprintsScreen: React.FC<SprintsScreenProps> = ({ onNavigate }) => {
           )}
         </>
       )}
+
+      <Modal
+        isOpen={isEditModalOpen}
+        onClose={() => { setIsEditModalOpen(false); setEditingSprint(null); }}
+        title="Editar Sprint"
+      >
+        <form onSubmit={handleUpdateSprint} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Título</label>
+            <Input
+              value={formData.title}
+              onChange={e => setFormData({...formData, title: e.target.value})}
+              placeholder="Sprint 1"
+              required
+            />
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Data Início</label>
+              <Input
+                type="date"
+                value={formData.start_date}
+                onChange={e => setFormData({...formData, start_date: e.target.value})}
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Data Fim</label>
+              <Input
+                type="date"
+                value={formData.end_date}
+                onChange={e => setFormData({...formData, end_date: e.target.value})}
+                required
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Observação</label>
+            <textarea
+              className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              rows={3}
+              value={formData.observation || ''}
+              onChange={e => setFormData({...formData, observation: e.target.value})}
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Adicionar Novas Tarefas</label>
+            <div className="flex items-center gap-2 mb-2">
+              <div className="flex-1">
+                <input
+                  className="block w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                  value={newTaskDescription}
+                  onChange={e => setNewTaskDescription(e.target.value)}
+                  placeholder="Nova tarefa..."
+                  onKeyPress={e => e.key === 'Enter' && (e.preventDefault(), handleAddTask())}
+                />
+              </div>
+              <button 
+                type="button"
+                className="w-10 h-10 flex items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-blue-600 transition-all"
+                onClick={handleAddTask}
+                title="Adicionar Tarefa"
+              >
+                <Plus size={20} />
+              </button>
+            </div>
+            <div className="space-y-2 max-h-40 overflow-y-auto">
+              {formData.tasks?.map((task, index) => (
+                <div key={index} className="flex justify-between items-center bg-gray-50 p-2 rounded">
+                  <span className="text-sm">{task.description}</span>
+                  <button type="button" onClick={() => handleRemoveTask(index)} className="text-red-500">
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2 pt-4">
+            <Button type="button" variant="outline" onClick={() => { setIsEditModalOpen(false); setEditingSprint(null); }}>
+              Cancelar
+            </Button>
+            <Button type="submit">
+              Salvar Alterações
+            </Button>
+          </div>
+        </form>
+      </Modal>
 
       <Modal
         isOpen={isCreateModalOpen}

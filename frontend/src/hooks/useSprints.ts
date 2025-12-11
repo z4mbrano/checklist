@@ -78,6 +78,17 @@ export function useSprints(projectId?: number) {
     }
   };
 
+  const updateSprint = async (id: number, data: any) => {
+    try {
+      const updatedSprint = await sprintService.update(id, data);
+      setSprints(prev => prev.map(s => s.id === id ? updatedSprint : s));
+      return updatedSprint;
+    } catch (err) {
+      console.error(err);
+      throw err;
+    }
+  };
+
   const deleteSprint = async (id: number) => {
     try {
       await sprintService.delete(id);
@@ -94,6 +105,7 @@ export function useSprints(projectId?: number) {
     error,
     fetchSprints,
     createSprint,
+    updateSprint,
     updateSprintStatus,
     updateSprintTask,
     deleteSprint

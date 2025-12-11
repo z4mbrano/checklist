@@ -56,6 +56,19 @@ def update_task_status(
         raise HTTPException(status_code=404, detail="Task not found")
     return task
 
+@router.put("/{sprint_id}", response_model=SprintResponse)
+def update_sprint(
+    sprint_id: int,
+    sprint_update: SprintUpdate,
+    service: SprintService = Depends(get_sprint_service),
+    current_user: User = Depends(get_current_active_user)
+):
+    """Update sprint details and add tasks."""
+    sprint = service.update_sprint(sprint_id, sprint_update)
+    if not sprint:
+        raise HTTPException(status_code=404, detail="Sprint not found")
+    return sprint
+
 @router.delete("/{sprint_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_sprint(
     sprint_id: int,
