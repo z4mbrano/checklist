@@ -75,7 +75,7 @@ export const ProjectDetailScreen = ({
   selectedProject: propProject, 
   onNavigate
 }: ProjectDetailScreenProps) => {
-  const { user } = useAuth()
+  const { user, isAdmin } = useAuth()
   const { checkins, updateCheckin } = useData()
   const [editingCheckin, setEditingCheckin] = useState<Checkin | null>(null)
   
@@ -156,7 +156,7 @@ export const ProjectDetailScreen = ({
   const projectCheckins = (checkins || []).filter(c => c.projectId === selectedProject.id)
   
   // Check if user can edit this project
-  const canEdit = user?.isAdmin || user?.role === UserRole.SUPERVISOR || user?.email === selectedProject.responsibleEmail
+  const canEdit = isAdmin || user?.role === UserRole.SUPERVISOR || user?.email === selectedProject.responsibleEmail
 
   const handleExportPDF = () => {
     window.print()
