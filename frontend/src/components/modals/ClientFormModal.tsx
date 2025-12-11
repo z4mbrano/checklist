@@ -4,6 +4,7 @@ import { Input } from '../ui/Input'
 import { Button } from '../ui/Button'
 import { clientService } from '../../services/api'
 import { toast } from 'react-hot-toast'
+import { Search, Loader2 } from 'lucide-react'
 
 interface ClientFormModalProps {
   isOpen: boolean
@@ -24,9 +25,48 @@ export const ClientFormModal = ({ isOpen, onClose, onSuccess }: ClientFormModalP
     cep: ''
   })
 
+  const [isSearchingCnpj, setIsSearchingCnpj] = useState(false)
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
     setFormData(prev => ({ ...prev, [name]: value }))
+  }
+
+  const handleCnpjSearch = async () => {
+    const cleanCnpj = formData.cnpj.replace(/\D/g, '')
+    if (cleanCnpj.length !== 14) {
+      toast.error('CNPJ inválido. Digite apenas números.')
+      return
+    }
+
+    setIsSearchingCnpj(true)
+    try {
+      // Using BrasilAPI (public and free)
+      const response = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${cleanCnpj}`)
+      
+      if (!response.ok) {
+        throw new Error('CNPJ não encontrado na Receita Federal')
+      }
+      
+      const data = await response.json()
+      
+      setFormData(prev => ({
+        ...prev,
+        nome: data.razao_social || data.nome_fantasia || prev.nome,
+        telefone: data.ddd_telefone_1 || prev.telefone,
+        endereco: `${data.logradouro}, ${data.numero}${data.complemento ? ' ' + data.complemento : ''} - ${data.bairro}`,
+        cidade: data.municipio,
+        estado: data.uf,
+        cep: data.cep
+      }))
+      
+      toast.success('Dados da empresa carregados!')
+    } catch (error) {
+      console.error('CNPJ Search Error:', error)
+      toast.error('Erro ao buscar dados do CNPJ')
+    } finally {
+      setIsSearchingCnpj(false)
+    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -72,12 +112,24 @@ export const ClientFormModal = ({ isOpen, onClose, onSuccess }: ClientFormModalP
         />
         
         <div className="grid grid-cols-2 gap-5">
-          <Input
-            label="CNPJ"
-            name="cnpj"
-            value={formData.cnpj}
-            onChange={handleChange}
-          />
+          <div className="relative">
+            <Input
+              label="CNPJ"
+              name="cnpj"
+              value={formData.cnpj}
+              onChange={handleChange}
+              placeholder="00.000.000/0000-00"
+            />
+            <button
+              type="button"
+              onClick={handleCnpjSearch}
+              disabled={isSearchingCnpj || !formData.cnpj}
+              className="absolute right-2 top-[34px] p-1.5 text-slate-400 hover:text-blue-600 disabled:opacity-50 transition-colors"
+              title="Buscar dados do CNPJ"
+            >
+              {isSearchingCnpj ? <Loader2 className="animate-spin" size={18} /> : <Search size={18} />}
+            </button>
+          </div>
           <Input
             label="Telefone"
             name="telefone"

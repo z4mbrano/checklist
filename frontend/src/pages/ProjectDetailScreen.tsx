@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { ArrowLeft, FileText, Edit, History, Users, Plus, Trash2, FileSpreadsheet } from 'lucide-react'
+import { ArrowLeft, FileText, Edit, History, Users, Plus, Trash2, FileSpreadsheet, CheckCircle } from 'lucide-react'
 import { Card } from '../components/ui/Card'
 import { Modal } from '../components/ui/Modal'
 import { Input } from '../components/ui/Input'
@@ -341,19 +341,36 @@ const handleExportCSV = () => {
               </div>
             </div>
             
-            <div className="flex flex-wrap gap-2 mb-3">
-              {c.activities.map(tag => (
-                <span key={tag} className="px-2 py-0.5 bg-slate-100 text-slate-600 text-xs rounded-md font-medium">
-                  {tag}
-                </span>
-              ))}
+            <div className="space-y-4 mt-4">
+              {/* Observations Section */}
+              {c.observations && (
+                <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
+                  <h4 className="text-xs font-bold text-slate-500 uppercase mb-2 flex items-center gap-1.5">
+                    <FileText size={14} /> Observações
+                  </h4>
+                  <p className="text-sm text-slate-700 whitespace-pre-wrap leading-relaxed">
+                    {c.observations}
+                  </p>
+                </div>
+              )}
+
+              {/* Activities Section */}
+              {c.activities && c.activities.length > 0 && (
+                <div>
+                  <h4 className="text-xs font-bold text-slate-500 uppercase mb-2 flex items-center gap-1.5">
+                    <CheckCircle size={14} /> Atividades Realizadas
+                  </h4>
+                  <div className="flex flex-wrap gap-2">
+                    {c.activities.map(tag => (
+                      <span key={tag} className="px-3 py-1 bg-blue-50 text-blue-700 text-xs rounded-full font-medium border border-blue-100 flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-blue-400"></span>
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
-            
-            {c.observations && (
-              <p className="text-sm text-slate-600 bg-slate-50 p-3 rounded-lg italic">
-                "{c.observations}"
-              </p>
-            )}
 
             {(user?.isAdmin || user?.role === 'admin') && (
               <div className="mt-4 pt-3 border-t border-slate-100 flex justify-end no-print">
