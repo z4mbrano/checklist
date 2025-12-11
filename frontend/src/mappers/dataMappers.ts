@@ -33,14 +33,16 @@ export class ProjectMapper {
     }
   }
 
-  private static mapStatus(apiStatus: ApiProjectStatus): 'Em Andamento' | 'Concluído' | 'Pausado' {
-    const statusMap: Record<ApiProjectStatus, 'Em Andamento' | 'Concluído' | 'Pausado'> = {
-      [ApiProjectStatus.ACTIVE]: 'Em Andamento',
-      [ApiProjectStatus.COMPLETED]: 'Concluído',
-      [ApiProjectStatus.ON_HOLD]: 'Pausado'
+  private static mapStatus(apiStatus: ApiProjectStatus): 'Em Andamento' | 'Concluído' | 'Pausado' | 'Cancelado' | 'Planejamento' {
+    const statusMap: Record<ApiProjectStatus, 'Em Andamento' | 'Concluído' | 'Pausado' | 'Cancelado' | 'Planejamento'> = {
+      [ApiProjectStatus.PLANEJAMENTO]: 'Planejamento',
+      [ApiProjectStatus.EM_ANDAMENTO]: 'Em Andamento',
+      [ApiProjectStatus.PAUSADO]: 'Pausado',
+      [ApiProjectStatus.CONCLUIDO]: 'Concluído',
+      [ApiProjectStatus.CANCELADO]: 'Cancelado'
     }
 
-    return statusMap[apiStatus] || 'Em Andamento'
+    return statusMap[apiStatus] || 'Planejamento'
   }
 
   static toDomainList(apiProjects: ApiProject[]): Project[] {

@@ -262,6 +262,8 @@ const handleExportCSV = () => {
               <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
                 selectedProject.status === 'Concluído' ? 'bg-green-100 text-green-800' :
                 selectedProject.status === 'Em Andamento' ? 'bg-blue-100 text-blue-800' :
+                selectedProject.status === 'Cancelado' ? 'bg-red-100 text-red-800' :
+                selectedProject.status === 'Pausado' ? 'bg-yellow-100 text-yellow-800' :
                 'bg-gray-100 text-gray-800'
               }`}>
                 {selectedProject.status}
@@ -466,7 +468,7 @@ const handleExportCSV = () => {
         <div className="space-y-3">
            <p className="text-sm text-slate-600 mb-4">Selecione o novo status para o projeto:</p>
            
-           {selectedProject.status !== 'Em Andamento' && (
+           {(selectedProject.status === 'Planejamento' || selectedProject.status === 'Pausado') && (
              <Button onClick={() => handleStatusUpdate('start')} className="w-full justify-start">
                <CheckCircle className="mr-2 h-4 w-4" /> Iniciar (Em Andamento)
              </Button>
@@ -478,7 +480,7 @@ const handleExportCSV = () => {
              </Button>
            )}
            
-           {selectedProject.status === 'Em Andamento' && (
+           {(selectedProject.status === 'Em Andamento' || selectedProject.status === 'Pausado') && (
              <Button onClick={() => handleStatusUpdate('complete')} variant="success" className="w-full justify-start">
                <CheckCircle className="mr-2 h-4 w-4" /> Concluir Projeto
              </Button>

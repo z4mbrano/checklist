@@ -2,9 +2,11 @@ import { Client } from './client.types'
 import { User } from './auth.types'
 
 export enum ProjectStatus {
-  ACTIVE = 'active',
-  ON_HOLD = 'on_hold', 
-  COMPLETED = 'completed'
+  PLANEJAMENTO = 'planejamento',
+  EM_ANDAMENTO = 'em_andamento',
+  PAUSADO = 'pausado',
+  CONCLUIDO = 'concluido',
+  CANCELADO = 'cancelado'
 }
 
 export interface Project {
