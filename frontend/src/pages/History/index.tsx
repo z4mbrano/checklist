@@ -19,7 +19,23 @@ export const HistoryScreen = ({
   const { projects, checkins, deleteProject } = useData()
   const [searchTerm, setSearchTerm] = useState('')
 
-  const canManageProjects = user?.role === 'admin' || user?.role === 'supervisor'
+  // Debug user role to help diagnose permission issues
+  React.useEffect(() => {
+    if (user) {
+      console.log('[HistoryScreen] Current user:', { 
+        id: user.id, 
+        role: user.role, 
+        isAdmin: user.isAdmin 
+      })
+    }
+  }, [user])
+
+  const canManageProjects = useMemo(() => {
+    if (!user) return false
+    // Ensure case-insensitive comparison and handle potential isAdmin flag
+    const role = String(user.role).toLowerCase()
+    return user.isAdmin === true || role === 'admin' || role === 'supervisor'
+  }, [user])
 
   const filteredProjects = useMemo(() => {
     const base = projects // Adjust later if role-based filtering returns
